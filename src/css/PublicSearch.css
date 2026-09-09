@@ -4,7 +4,15 @@
    ========================================================== */
 
 .public-shell {
+  width: 100%;
+  height: 100dvh;
   min-height: 100vh;
+  max-width: 100vw;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y pinch-zoom;
   display: flex;
   flex-direction: column;
   background: #eef2f4;
@@ -884,5 +892,191 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 1px;
+  }
+}
+
+
+/* ==========================================================
+   PUBLIC V17.4
+   True phone layout + accessible viewport zoom
+   ========================================================== */
+
+.public-shell,
+.public-main,
+.public-browser,
+.public-browser-panel,
+.public-map-stage,
+.public-map {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .public-shell {
+    width: 100vw;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+
+  .public-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    width: 100%;
+    min-height: 54px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+  }
+
+  .public-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .public-brand-mark {
+    width: 29px;
+    height: 29px;
+  }
+
+  .public-brand strong {
+    font-size: 12px;
+  }
+
+  .public-brand span {
+    max-width: 58vw;
+    font-size: 8px;
+  }
+
+  .public-header-actions {
+    flex: 0 0 auto;
+    display: block;
+  }
+
+  .public-header-actions button {
+    min-height: 32px;
+    padding: 0 10px;
+  }
+
+  .public-main {
+    width: 100%;
+    margin: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .public-map-main {
+    padding-top: 12px;
+    padding-bottom: 18px;
+  }
+
+  .public-map-intro {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .public-map-intro h1 {
+    margin-top: 3px;
+    font-size: clamp(22px, 8vw, 30px);
+  }
+
+  .public-map-intro p {
+    font-size: 10px;
+  }
+
+  .public-map-intro-note {
+    width: 100%;
+    max-width: none;
+  }
+
+  .public-browser {
+    width: 100%;
+    min-height: 0;
+    overflow: visible;
+    border-radius: 8px;
+  }
+
+  .public-map-stage {
+    order: 1;
+    width: 100%;
+    min-height: 320px;
+    height: min(52dvh, 500px);
+    max-height: 500px;
+    overflow: hidden;
+  }
+
+  .public-map {
+    width: 100%;
+    min-height: 320px;
+    height: 100%;
+    max-height: none;
+  }
+
+  .public-browser-panel {
+    order: 2;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    border-top: 1px solid #d9e1e5;
+    border-right: 0;
+  }
+
+  .public-search-form-panel {
+    position: relative;
+    top: auto;
+    margin: 10px 10px 7px;
+  }
+
+  .public-mode-tabs-panel {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  /* Prevent Safari from automatically magnifying the page when
+     the public search/correction form receives focus. */
+  .public-search-form input,
+  .public-correction-form input,
+  .public-correction-form textarea,
+  .public-correction-form select {
+    font-size: 16px;
+  }
+
+  .public-search-form {
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+  }
+
+  .public-search-form button {
+    min-height: 38px;
+  }
+
+  .public-footer {
+    width: 100%;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .public-footer-links {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 390px) {
+  .public-map-stage,
+  .public-map {
+    min-height: 290px;
+  }
+
+  .public-search-form {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .public-search-form button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }

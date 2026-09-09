@@ -1669,7 +1669,6 @@ export default function PublicSearchPage() {
         {!kioskMode && (
           <div className="public-header-actions">
             <button type="button" onClick={() => navigate("/")}>Home</button>
-            <button type="button" onClick={() => navigate("/#staff-access")}>Staff Sign In</button>
           </div>
         )}
 
@@ -2103,9 +2102,6 @@ export default function PublicSearchPage() {
         <div className="public-footer-links">
           {config.contactEmail && <a href={`mailto:${config.contactEmail}`}>{config.contactEmail}</a>}
           {config.contactPhone && <a href={`tel:${config.contactPhone}`}>{config.contactPhone}</a>}
-          {!kioskMode && (
-            <button type="button" onClick={() => navigate("/#staff-access")}>Staff Sign In <ExternalLink size={11} /></button>
-          )}
         </div>
       </footer>
     </div>
