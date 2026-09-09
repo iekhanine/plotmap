@@ -1393,3 +1393,163 @@ button:disabled {
 .settings-panel > h2 {
   margin-top: 8px;
 }
+
+
+/* ==========================================================
+   APP CSS 018
+   v13 — authenticated account controls
+   ========================================================== */
+
+.header-admin-button {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid #354047;
+  border-radius: 4px;
+  background: #1a2024;
+  color: #c6d5dc;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.header-admin-button:hover {
+  border-color: rgba(70, 190, 255, 0.55);
+  color: #b6ebff;
+}
+
+.plotmap-account-chip {
+  height: 31px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 9px;
+  border-left: 1px solid #30383d;
+}
+
+.plotmap-account-chip > span {
+  max-width: 150px;
+  min-width: 0;
+}
+
+.plotmap-account-chip strong,
+.plotmap-account-chip small {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plotmap-account-chip strong {
+  color: #d9e1e5;
+  font-size: 8px;
+}
+
+.plotmap-account-chip small {
+  margin-top: 1px;
+  color: #6f7d84;
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
+
+.plotmap-account-chip button {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #354047;
+  border-radius: 4px;
+  background: #171d20;
+  color: #8d999f;
+  cursor: pointer;
+}
+
+.plotmap-account-chip button:hover {
+  color: #f0f4f5;
+}
+
+/* ==========================================================
+   APP CSS 020
+   v14 — public demo indicator
+   ========================================================== */
+
+.plotmap-account-chip.demo {
+  padding: 0 4px 0 9px;
+  border: 1px solid rgba(70, 190, 255, 0.28);
+  border-radius: 5px;
+  background: rgba(70, 190, 255, 0.055);
+}
+
+.plotmap-account-chip.demo small {
+  color: #79ccec;
+}
+
+.plotmap-demo-banner {
+  position: absolute;
+  top: 52px;
+  left: 310px;
+  right: 0;
+  z-index: 17;
+  min-height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(70, 190, 255, 0.22);
+  background: rgba(13, 28, 35, 0.93);
+  color: #9bc9dc;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.plotmap-demo-banner strong {
+  color: #bfeaff;
+  font-size: 7px;
+  letter-spacing: 0.8px;
+}
+
+.plotmap-demo-banner span {
+  color: #7f969f;
+  font-size: 8px;
+}
+
+
+/* ==========================================================
+   APP CSS 021
+   v14 — manually resizable floating windows
+   ========================================================== */
+
+.map-editor-window,
+.plot-detail-card.draggable-window {
+  resize: both;
+  overflow: auto;
+}
+
+.map-editor-window {
+  min-width: 265px;
+  min-height: 190px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 20px);
+}
+
+.plot-detail-card.draggable-window {
+  min-width: 285px;
+  min-height: 210px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 20px);
+}
+
+.draggable-window input,
+.draggable-window textarea,
+.draggable-window select {
+  user-select: text;
+}
+
+@media (max-width: 850px) {
+  .plotmap-demo-banner {
+    left: 0;
+  }
+}

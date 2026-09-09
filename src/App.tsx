@@ -5,6 +5,10 @@ import {
   useState,
 } from "react";
 
+import {
+  useNavigate,
+} from "react-router-dom";
+
 import Collection from "ol/Collection.js";
 import Feature from "ol/Feature.js";
 import OLMap from "ol/Map.js";
@@ -40,6 +44,7 @@ import {
   BoxSelect,
   Crosshair,
   Database,
+  Eye,
   LoaderCircle,
   MapPin,
   MousePointerClick,
@@ -50,7 +55,9 @@ import {
   Shapes,
   Trash2,
   CheckSquare,
+  LogOut,
   Undo2,
+  UserCog,
   X,
 } from "lucide-react";
 
@@ -60,6 +67,10 @@ import {
   plotMapConfig,
   type GeographicBounds,
 } from "./config/plotmap";
+
+import {
+  useAuth,
+} from "./context/AuthContext";
 
 import {
   assignPlotsToArea,
@@ -648,6 +659,18 @@ function usePanelDrag() {
    ========================================================== */
 
 export default function App() {
+  const navigate =
+    useNavigate();
+
+  const {
+    profile,
+    demoMode,
+    canEditCore,
+    canManageUsers,
+    canEditPlotNames,
+    signOut,
+  } = useAuth();
+
   const mapContainerRef =
     useRef<HTMLDivElement | null>(
       null
@@ -2297,6 +2320,10 @@ export default function App() {
      ======================================================== */
 
   function toggleEditor() {
+    if (!canEditCore) {
+      return;
+    }
+
     if (editorOpen) {
       clearTransientState();
 
@@ -3669,25 +3696,44 @@ export default function App() {
         </div>
 
         <div className="plotmap-header-actions">
-          <button
-            type="button"
-            className={
-              editorOpen
-                ? "editor-toggle active"
-                : "editor-toggle"
-            }
-            onClick={
-              toggleEditor
-            }
-          >
-            <Pencil
-              size={13}
-            />
+          {canManageUsers && (
+            <button
+              type="button"
+              className="header-admin-button"
+              onClick={() =>
+                navigate(
+                  "/admin/users"
+                )
+              }
+            >
+              <UserCog
+                size={13}
+              />
+              Accounts
+            </button>
+          )}
 
-            {editorOpen
-              ? "Exit Map Editor"
-              : "Edit Map"}
-          </button>
+          {canEditCore && (
+            <button
+              type="button"
+              className={
+                editorOpen
+                  ? "editor-toggle active"
+                  : "editor-toggle"
+              }
+              onClick={
+                toggleEditor
+              }
+            >
+              <Pencil
+                size={13}
+              />
+
+              {editorOpen
+                ? "Exit Map Editor"
+                : "Edit Map"}
+            </button>
+          )}
 
           <div className="plotmap-header-status">
             <span className="status-dot ready" />
@@ -3700,8 +3746,70 @@ export default function App() {
                 ? "Fallback aerial"
                 : "Loading aerial"}
           </div>
+
+          <div
+            className={
+              demoMode
+                ? "plotmap-account-chip demo"
+                : "plotmap-account-chip"
+            }
+          >
+            <span>
+              <strong>
+                {demoMode
+                  ? "Demo Visitor"
+                  : profile?.displayName ||
+                    profile?.email ||
+                    "PlotMap User"}
+              </strong>
+
+              <small>
+                {demoMode
+                  ? "READ-ONLY DEMO"
+                  : profile?.role
+                      .replace(
+                        "_",
+                        " "
+                      )
+                      .toUpperCase()}
+              </small>
+            </span>
+
+            <button
+              type="button"
+              title={
+                demoMode
+                  ? "Exit demo"
+                  : "Sign out"
+              }
+              onClick={async () => {
+                await signOut();
+                navigate(
+                  "/login",
+                  {
+                    replace:
+                      true,
+                  }
+                );
+              }}
+            >
+              <LogOut
+                size={13}
+              />
+            </button>
+          </div>
         </div>
       </header>
+
+      {demoMode && (
+        <div className="plotmap-demo-banner">
+          <Eye
+            size={12}
+          />
+          <strong>DEMO VIEW</strong>
+          <span>Read-only access. Editing, account administration, and map tools are disabled.</span>
+        </div>
+      )}
 
       <main className="plotmap-workspace">
         <aside className="plotmap-sidebar">
@@ -3901,41 +4009,43 @@ export default function App() {
               </span>
 
               <div>
-                <button
-                  type="button"
-                  className={
-                    selectionMode
-                      ? "selection-toggle active"
-                      : "selection-toggle"
-                  }
-                  onClick={() => {
-                    setSelectionMode(
-                      (current) => {
-                        const next =
-                          !current;
+                {canEditCore && (
+                  <button
+                    type="button"
+                    className={
+                      selectionMode
+                        ? "selection-toggle active"
+                        : "selection-toggle"
+                    }
+                    onClick={() => {
+                      setSelectionMode(
+                        (current) => {
+                          const next =
+                            !current;
 
-                        if (next) {
-                          setBulkAreaId(
-                            selectedAreaId ||
-                            ""
-                          );
+                          if (next) {
+                            setBulkAreaId(
+                              selectedAreaId ||
+                              ""
+                            );
+                          }
+
+                          return next;
                         }
+                      );
 
-                        return next;
-                      }
-                    );
+                      clearPlotSelection();
+                    }}
+                  >
+                    <CheckSquare
+                      size={12}
+                    />
 
-                    clearPlotSelection();
-                  }}
-                >
-                  <CheckSquare
-                    size={12}
-                  />
-
-                  {selectionMode
-                    ? "Done"
-                    : "Select"}
-                </button>
+                    {selectionMode
+                      ? "Done"
+                      : "Select"}
+                  </button>
+                )}
 
                 <small>
                   {
@@ -3945,7 +4055,8 @@ export default function App() {
               </div>
             </div>
 
-            {selectionMode && (
+            {canEditCore &&
+            selectionMode && (
               <div className="bulk-plot-toolbar">
                 <div className="bulk-selection-row">
                   <span>
@@ -4216,7 +4327,8 @@ export default function App() {
             }
           />
 
-          {editorOpen && (
+          {canEditCore &&
+          editorOpen && (
             <section
               className="map-editor-window draggable-window"
               style={
@@ -4439,7 +4551,8 @@ export default function App() {
             )}
           </div>
 
-          {editorOpen && (
+          {canEditCore &&
+          editorOpen && (
             <div className="map-editor-status">
               {editorMode ===
                 "draw-area" &&
@@ -4799,7 +4912,8 @@ export default function App() {
                       </div>
                     )}
 
-                    {editorOpen &&
+                    {canEditCore &&
+                    editorOpen &&
                     personEditDraft ? (
                       <div className="person-edit-form">
                         <div className="person-name-grid">
@@ -5263,58 +5377,63 @@ export default function App() {
                         `Plot ${selectedPlot.plot_number}`}
                     </h2>
 
-                    {editorOpen &&
+                    {(canEditCore ||
+                    canEditPlotNames) &&
                     plotEditDraft ? (
                       <div className="plot-edit-form">
-                        <label>
-                          Area
-                        </label>
+                        {canEditCore && (
+                          <>
+                            <label>
+                              Area
+                            </label>
 
-                        <select
-                          value={
-                            plotEditDraft
-                              .plotAreaId ||
-                            ""
-                          }
-                          onChange={
-                            (event) =>
-                              setPlotEditDraft(
-                                (current) =>
-                                  current
-                                    ? {
-                                        ...current,
+                            <select
+                              value={
+                                plotEditDraft
+                                  .plotAreaId ||
+                                ""
+                              }
+                              onChange={
+                                (event) =>
+                                  setPlotEditDraft(
+                                    (current) =>
+                                      current
+                                        ? {
+                                            ...current,
 
-                                        plotAreaId:
-                                          event
-                                            .target
-                                            .value ||
-                                          null,
-                                      }
-                                    : current
-                              )
-                          }
-                        >
-                          <option value="">
-                            No Area
-                          </option>
-
-                          {dataset?.mapAreas.map(
-                            (area) => (
-                              <option
-                                key={
-                                  area.id
-                                }
-                                value={
-                                  area.id
-                                }
-                              >
-                                {
-                                  area.label
-                                }
+                                            plotAreaId:
+                                              event
+                                                .target
+                                                .value ||
+                                              null,
+                                          }
+                                        : current
+                                  )
+                              }
+                            >
+                              <option value="">
+                                No Area
                               </option>
-                            )
-                          )}
-                        </select>
+
+                              {dataset?.mapAreas.map(
+                                (area) => (
+                                  <option
+                                    key={
+                                      area.id
+                                    }
+                                    value={
+                                      area.id
+                                    }
+                                  >
+                                    {
+                                      area.label
+                                    }
+                                  </option>
+                                )
+                              )}
+                            </select>
+                          </>
+                        )}
 
                         <label>
                           Plot number / ID
@@ -5372,6 +5491,8 @@ export default function App() {
                           }
                         />
 
+                        {canEditCore && (
+                          <>
                         <div className="plot-edit-grid">
                           <div>
                             <label>
@@ -5490,6 +5611,9 @@ export default function App() {
                           }
                         />
 
+                          </>
+                        )}
+
                         <button
                           type="button"
                           className="primary-action full"
@@ -5506,7 +5630,9 @@ export default function App() {
                           <Save
                             size={14}
                           />
-                          Save Plot Settings
+                          {canEditCore
+                            ? "Save Plot Settings"
+                            : "Save Plot Name"}
                         </button>
                       </div>
                     ) : (
@@ -5555,7 +5681,8 @@ export default function App() {
                   </div>
                 )}
 
-                {editorOpen &&
+                {canEditCore &&
+                editorOpen &&
                 detailTab ===
                   "settings" && (
                   pendingPlacement?.plotId ===

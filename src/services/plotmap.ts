@@ -361,7 +361,7 @@ export async function createPlotsBatch(
 
   const response =
     await supabase.rpc(
-      "pm_batch_create_demo_plots_v2",
+      "pm_batch_create_plots",
       {
         p_cemetery_id:
           cemeteryId,
@@ -413,7 +413,7 @@ export async function createMapArea(
 ): Promise<MapAreaRecord> {
   const response =
     await supabase.rpc(
-      "pm_create_demo_plot_area",
+      "pm_create_plot_area",
       {
         p_cemetery_id:
           cemeteryId,
@@ -688,7 +688,7 @@ export async function deletePlotsBatch(
 
   const response =
     await supabase.rpc(
-      "pm_delete_demo_plots",
+      "pm_delete_plots",
       {
         p_plot_ids:
           plotIds,
@@ -716,7 +716,7 @@ export async function savePlotPersonInfo(
 ): Promise<string> {
   const response =
     await supabase.rpc(
-      "pm_upsert_demo_plot_person",
+      "pm_upsert_plot_person",
       {
         p_plot_id:
           plotId,
