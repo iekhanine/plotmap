@@ -16,6 +16,7 @@
   --pm-occupied: #d64541;
   --pm-reserved: #f5a623;
   --pm-unavailable: #697179;
+  --pm-mapped: #46beff;
 }
 
 * {
@@ -31,6 +32,11 @@ button {
   color: inherit;
 }
 
+button:disabled {
+  opacity: 0.58;
+  cursor: default;
+}
+
 .plotmap-shell {
   width: 100%;
   height: 100vh;
@@ -39,6 +45,7 @@ button {
   background: var(--pm-bg);
   color: var(--pm-text);
 }
+
 
 /* ==========================================================
    APP CSS 002
@@ -88,6 +95,37 @@ button {
   font-size: 10px;
 }
 
+.plotmap-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-toggle {
+  height: 29px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid #343b40;
+  border-radius: 5px;
+  background: #1b2024;
+  color: #b9c1c6;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.editor-toggle:hover {
+  border-color: #59646b;
+  color: #fff;
+}
+
+.editor-toggle.active {
+  border-color: var(--pm-mapped);
+  background: rgba(70, 190, 255, 0.12);
+  color: #8bdcff;
+}
+
 .plotmap-header-status {
   display: flex;
   align-items: center;
@@ -107,6 +145,7 @@ button {
   background: var(--pm-available);
   box-shadow: 0 0 8px rgba(39, 174, 96, 0.55);
 }
+
 
 /* ==========================================================
    APP CSS 003
@@ -149,6 +188,36 @@ button {
   margin: 0;
   color: var(--pm-muted);
   font-size: 10px;
+}
+
+.editor-sidebar-note {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(70, 190, 255, 0.28);
+  background: rgba(70, 190, 255, 0.07);
+}
+
+.editor-sidebar-note strong,
+.editor-sidebar-note span,
+.editor-sidebar-note small {
+  display: block;
+}
+
+.editor-sidebar-note strong {
+  color: #83d9ff;
+  font-size: 9px;
+  letter-spacing: 0.9px;
+}
+
+.editor-sidebar-note span {
+  margin-top: 4px;
+  color: #d4e3e9;
+  font-size: 10px;
+}
+
+.editor-sidebar-note small {
+  margin-top: 4px;
+  color: #75868e;
+  font-size: 9px;
 }
 
 .search-section {
@@ -341,6 +410,20 @@ button {
   background: var(--pm-unavailable);
 }
 
+.legend.mapped,
+.mapped-dot {
+  background: var(--pm-mapped);
+}
+
+.mapped-dot {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(70, 190, 255, 0.55);
+}
+
 .result-copy {
   min-width: 0;
 }
@@ -364,6 +447,7 @@ button {
   font-size: 9px;
 }
 
+
 /* ==========================================================
    APP CSS 004
    Map panel
@@ -381,9 +465,8 @@ button {
   inset: 0;
 }
 
-.esri-view,
-.esri-view-surface {
-  outline: 0 !important;
+.plotmap-map.placing .ol-viewport {
+  cursor: crosshair;
 }
 
 .map-toolbar {
@@ -406,6 +489,39 @@ button {
   font-size: 10px;
   cursor: pointer;
   backdrop-filter: blur(6px);
+}
+
+.map-editor-hint {
+  position: absolute;
+  top: 12px;
+  left: 116px;
+  z-index: 5;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(520px, calc(100% - 470px));
+  padding: 0 10px;
+  border: 1px solid rgba(70, 190, 255, 0.38);
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(15, 30, 37, 0.94);
+  color: #9fdefb;
+  font-size: 9px;
+  backdrop-filter: blur(6px);
+}
+
+.map-editor-hint span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.map-editor-hint.placing {
+  border-color: #65d7ff;
+  background: rgba(17, 47, 59, 0.96);
+  color: #d9f5ff;
+  box-shadow: 0 0 18px rgba(70, 190, 255, 0.16);
 }
 
 .map-legend {
@@ -490,6 +606,7 @@ button {
   }
 }
 
+
 /* ==========================================================
    APP CSS 005
    Plot detail card
@@ -509,6 +626,10 @@ button {
   backdrop-filter: blur(10px);
 }
 
+.plot-detail-card.editor-active {
+  border-color: rgba(70, 190, 255, 0.42);
+}
+
 .detail-close {
   position: absolute;
   top: 9px;
@@ -520,7 +641,14 @@ button {
   cursor: pointer;
 }
 
-.detail-status {
+.detail-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.detail-status,
+.placement-badge {
   display: inline-block;
   padding: 3px 6px;
   border-radius: 999px;
@@ -548,6 +676,16 @@ button {
 .detail-status.unavailable {
   background: rgba(105, 113, 121, 0.18);
   color: #a8b0b6;
+}
+
+.placement-badge {
+  background: rgba(105, 113, 121, 0.15);
+  color: #8e9aa2;
+}
+
+.placement-badge.mapped {
+  background: rgba(70, 190, 255, 0.15);
+  color: #7ed8ff;
 }
 
 .plot-detail-card h2 {
@@ -587,26 +725,122 @@ button {
   text-transform: capitalize;
 }
 
-.primary-action {
-  width: 100%;
-  height: 32px;
+
+/* ==========================================================
+   APP CSS 006
+   Map editor placement controls
+   ========================================================== */
+
+.placement-panel {
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid #2d3c43;
+  border-radius: 6px;
+  background: #12191d;
+}
+
+.placement-panel-heading {
+  margin-bottom: 7px;
+  color: #a8dff5;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.coordinate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.coordinate-row span {
+  color: #78878f;
+  font-size: 8px;
+}
+
+.coordinate-row code {
+  color: #d8e7ed;
+  font-size: 9px;
+}
+
+.placement-help {
+  margin: 7px 0 0;
+  color: #718087;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+.placement-help.pending {
+  color: #78cfee;
+}
+
+.editor-message {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #26343a;
+  color: #9eb2ba;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+.detail-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.detail-actions:has(.secondary-action + .primary-action) {
+  grid-template-columns: 0.75fr 1.25fr;
+}
+
+.detail-actions.split {
+  grid-template-columns: 0.7fr 1.3fr;
+}
+
+.primary-action,
+.secondary-action {
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid #e8ecef;
   border-radius: 5px;
-  background: #e8ecef;
-  color: #101416;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   cursor: pointer;
 }
 
+.primary-action {
+  border: 1px solid #e8ecef;
+  background: #e8ecef;
+  color: #101416;
+}
+
+.secondary-action {
+  border: 1px solid #3b454b;
+  background: #1a2024;
+  color: #b9c2c7;
+}
+
+.secondary-action:hover {
+  border-color: #65727a;
+  color: #fff;
+}
+
+
 /* ==========================================================
-   APP CSS 006
+   APP CSS 007
    Responsive
    ========================================================== */
+
+@media (max-width: 920px) {
+  .map-editor-hint {
+    max-width: 310px;
+  }
+}
 
 @media (max-width: 820px) {
   .plotmap-workspace {
@@ -619,6 +853,10 @@ button {
 
   .plot-detail-card {
     width: 240px;
+  }
+
+  .map-editor-hint {
+    display: none;
   }
 }
 
@@ -634,4 +872,431 @@ button {
   .plotmap-map-panel {
     height: 100%;
   }
+
+  .plotmap-header-actions {
+    gap: 6px;
+  }
+
+  .plotmap-header-status {
+    display: none;
+  }
+}
+
+
+/* ==========================================================
+   APP CSS 008
+   Map Editor v2 — ONE resizable Plot Area
+   ========================================================== */
+
+.area-editor-card {
+  margin-top: 10px;
+  padding: 9px;
+  border: 1px solid rgba(70, 190, 255, 0.28);
+  border-radius: 6px;
+  background: rgba(10, 24, 30, 0.55);
+}
+
+.area-editor-card > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.area-editor-card > div > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--pm-mapped);
+}
+
+.area-editor-card > div > span {
+  min-width: 0;
+}
+
+.area-editor-card b,
+.area-editor-card small {
+  display: block;
+}
+
+.area-editor-card b {
+  color: #d9f3ff;
+  font-size: 9px;
+}
+
+.area-editor-card small {
+  margin-top: 2px;
+  color: #728891;
+  font-size: 8px;
+  line-height: 11px;
+}
+
+.area-editor-card button {
+  width: 100%;
+  height: 27px;
+  margin-top: 8px;
+  border: 1px solid rgba(70, 190, 255, 0.42);
+  border-radius: 4px;
+  background: rgba(70, 190, 255, 0.11);
+  color: #8edfff;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.area-editor-card button:hover:not(:disabled) {
+  background: rgba(70, 190, 255, 0.18);
+}
+
+.map-toolbar {
+  display: flex;
+  gap: 5px;
+}
+
+.plotmap-map.editing .ol-viewport {
+  cursor: crosshair;
+}
+
+.map-editor-hint.area-resize {
+  border-color: #46beff;
+  background: rgba(12, 42, 54, 0.96);
+  color: #dff7ff;
+  box-shadow: 0 0 20px rgba(70, 190, 255, 0.18);
+}
+
+.area-save-panel {
+  position: absolute;
+  top: 52px;
+  left: 12px;
+  z-index: 8;
+  width: 310px;
+  padding: 11px;
+  border: 1px solid rgba(70, 190, 255, 0.48);
+  border-radius: 7px;
+  background: rgba(15, 21, 24, 0.96);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.area-save-panel strong,
+.area-save-panel > div:first-child > span {
+  display: block;
+}
+
+.area-save-panel strong {
+  color: #e8f7fd;
+  font-size: 11px;
+}
+
+.area-save-panel > div:first-child > span {
+  margin-top: 3px;
+  color: #83949c;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+.area-coordinates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 9px;
+  padding: 7px;
+  border: 1px solid #29373d;
+  border-radius: 4px;
+  background: #101619;
+}
+
+.area-coordinates span {
+  color: #8aa4af;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 8px;
+}
+
+.area-save-actions {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+@media (max-width: 820px) {
+  .area-save-panel {
+    width: 250px;
+  }
+}
+
+
+/* ==========================================================
+   APP CSS 009
+   Map Editor v3 — toolbar overlap fix + batch placement
+   ========================================================== */
+
+/*
+ * FIX:
+ * The editor instruction banner used to begin at left:116px,
+ * which put it on top of the Plot Area toolbar button.
+ *
+ * Keep the whole toolbar on row 1.
+ * Put editor instructions on row 2.
+ */
+.map-editor-hint {
+  top: 52px !important;
+  left: 12px !important;
+  max-width: min(620px, calc(100% - 330px)) !important;
+}
+
+/*
+ * Panels now begin below the toolbar AND the editor hint.
+ */
+.area-save-panel {
+  top: 92px !important;
+}
+
+.batch-editor-card {
+  margin-top: 8px;
+  padding: 9px;
+  border: 1px solid rgba(91, 216, 161, 0.28);
+  border-radius: 6px;
+  background: rgba(12, 31, 24, 0.5);
+}
+
+.batch-editor-card > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.batch-editor-card > div > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #64dba4;
+}
+
+.batch-editor-card > div > span {
+  min-width: 0;
+}
+
+.batch-editor-card b,
+.batch-editor-card small {
+  display: block;
+}
+
+.batch-editor-card b {
+  color: #dff8ec;
+  font-size: 9px;
+}
+
+.batch-editor-card small {
+  margin-top: 2px;
+  color: #789184;
+  font-size: 8px;
+  line-height: 11px;
+}
+
+.batch-editor-card button {
+  width: 100%;
+  min-height: 28px;
+  margin-top: 8px;
+  border: 1px solid rgba(91, 216, 161, 0.38);
+  border-radius: 4px;
+  background: rgba(91, 216, 161, 0.1);
+  color: #91e7bd;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.batch-editor-card button:hover:not(:disabled) {
+  background: rgba(91, 216, 161, 0.17);
+}
+
+.map-editor-hint.batch-place {
+  border-color: rgba(91, 216, 161, 0.7);
+  background: rgba(11, 38, 27, 0.96);
+  color: #dff8ec;
+  box-shadow: 0 0 20px rgba(91, 216, 161, 0.13);
+}
+
+.batch-save-panel {
+  position: absolute;
+  top: 92px;
+  left: 12px;
+  z-index: 8;
+  width: 330px;
+  padding: 11px;
+  border: 1px solid rgba(91, 216, 161, 0.45);
+  border-radius: 7px;
+  background: rgba(15, 21, 18, 0.97);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(10px);
+}
+
+.batch-save-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.batch-save-heading strong,
+.batch-save-heading span {
+  display: block;
+}
+
+.batch-save-heading strong {
+  color: #e9fff4;
+  font-size: 11px;
+}
+
+.batch-save-heading span {
+  margin-top: 2px;
+  color: #7f9588;
+  font-size: 8px;
+}
+
+.batch-save-heading b {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(91, 216, 161, 0.12);
+  color: #91e7bd;
+  font-size: 9px;
+}
+
+.batch-next {
+  margin-top: 9px;
+  padding: 8px;
+  border: 1px solid #2a3830;
+  border-radius: 5px;
+  background: #101713;
+}
+
+.batch-next small,
+.batch-next strong {
+  display: block;
+}
+
+.batch-next small {
+  color: #708277;
+  font-size: 7px;
+  letter-spacing: 0.7px;
+}
+
+.batch-next strong {
+  margin-top: 3px;
+  color: #dce9e1;
+  font-size: 9px;
+}
+
+.batch-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  color: #829188;
+  font-size: 8px;
+}
+
+.batch-message {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #29372f;
+  color: #91a49a;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+.batch-actions {
+  display: grid;
+  grid-template-columns: 1fr 0.75fr 1fr;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.batch-actions .primary-action,
+.batch-actions .secondary-action {
+  min-width: 0;
+  padding: 0 6px;
+}
+
+@media (max-width: 900px) {
+  .map-editor-hint {
+    max-width: min(430px, calc(100% - 280px)) !important;
+  }
+
+  .batch-save-panel {
+    width: 290px;
+  }
+}
+
+@media (max-width: 760px) {
+  .map-editor-hint {
+    display: none !important;
+  }
+
+  .area-save-panel,
+  .batch-save-panel {
+    top: 52px !important;
+  }
+}
+
+
+/* ==========================================================
+   APP CSS 010
+   Map Editor v4 — custom area name
+   ========================================================== */
+
+.area-name-editor {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center !important;
+  gap: 5px !important;
+  margin-top: 8px;
+}
+
+.area-name-editor input {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid #34434a;
+  border-radius: 4px;
+  outline: none;
+  background: #101619;
+  color: #e6f3f8;
+  font-size: 9px;
+}
+
+.area-name-editor input:focus {
+  border-color: rgba(70, 190, 255, 0.72);
+}
+
+.area-name-editor input:disabled {
+  opacity: 0.55;
+}
+
+.area-name-editor .area-name-save {
+  width: auto;
+  min-width: 72px;
+  height: 28px;
+  margin-top: 0;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+
+/* ==========================================================
+   APP CSS 011
+   Map Editor v5 — freeform batch create
+   ========================================================== */
+
+.batch-editor-card button {
+  opacity: 1;
+}
+
+.batch-editor-card button:disabled {
+  opacity: 0.5;
+}
+
+.batch-next strong {
+  font-size: 11px;
+  color: #eafff4;
 }

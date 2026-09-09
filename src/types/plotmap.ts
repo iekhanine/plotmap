@@ -1,6 +1,6 @@
 /* ==========================================================
    TYPES 001
-   PlotMap database / UI types
+   PlotMap data types
    ========================================================== */
 
 export type PlotStatus =
@@ -64,24 +64,72 @@ export type BurialRecord = {
   interment_type: string;
 };
 
+export type MapAreaGeometry = {
+  type: "bbox";
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+};
+
+export type MapAreaRecord = {
+  id: string;
+  organization_id: string;
+  cemetery_id: string;
+  feature_type: "boundary";
+  label: string;
+  geometry: MapAreaGeometry;
+  style: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+};
+
+export type PlotPlacementUpdate = {
+  plotId: string;
+  longitude: number;
+  latitude: number;
+};
+
+
+export type NewPlotPlacement = {
+  tempId: string;
+  plotNumber: string;
+  displayName: string;
+  longitude: number;
+  latitude: number;
+};
+
 export type PlotRecord = {
   id: string;
   cemetery_id: string;
   section_id: string;
   row_id: string | null;
+
   plot_number: string;
   display_name: string | null;
+
   status: PlotStatus;
   plot_type: string;
+
+  /*
+   * Legacy synthetic placement.
+   */
   x: number | null;
   y: number | null;
   width: number | null;
   height: number | null;
   rotation: number;
+
+  /*
+   * Real geographic placement.
+   */
+  longitude: number | null;
+  latitude: number | null;
+
   notes: string | null;
 
   section?: SectionRecord;
   row?: RowRecord;
+
   burials: Array<{
     burial: BurialRecord;
     person: PersonRecord;
@@ -90,7 +138,16 @@ export type PlotRecord = {
 
 export type PlotMapDataset = {
   cemetery: CemeteryRecord;
+
+  /*
+   * Sections / rows are organizational metadata.
+   */
   sections: SectionRecord[];
   rows: RowRecord[];
   plots: PlotRecord[];
+
+  /*
+   * One visual working boundary.
+   */
+  mapArea: MapAreaRecord | null;
 };
