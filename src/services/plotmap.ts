@@ -7,10 +7,11 @@ import type {
   CemeteryRecord,
   MapAreaGeometry,
   MapAreaRecord,
-  PersonRecord,
-  PlotMapDataset,
   NewPlotPlacement,
-  PlotPlacementUpdate,
+  PersonEditInput,
+  PersonRecord,
+  PlotEditInput,
+  PlotMapDataset,
   PlotRecord,
   RowRecord,
   SectionRecord,
@@ -49,7 +50,7 @@ export async function loadPlotMapDataset(
     rowsResponse,
     plotsResponse,
     burialsResponse,
-    mapAreaResponse,
+    mapAreasResponse,
   ] =
     await Promise.all([
       supabase
@@ -81,7 +82,7 @@ export async function loadPlotMapDataset(
       supabase
         .from("pm_plots")
         .select(
-          "id, cemetery_id, section_id, row_id, plot_number, display_name, status, plot_type, x, y, width, height, rotation, longitude, latitude, notes"
+          "id, organization_id, cemetery_id, plot_area_id, section_id, row_id, plot_number, display_name, status, plot_type, x, y, width, height, rotation, longitude, latitude, geometry, notes"
         )
         .eq(
           "cemetery_id",
@@ -91,7 +92,7 @@ export async function loadPlotMapDataset(
       supabase
         .from("pm_burials")
         .select(
-          "id, plot_id, person_id, burial_date, interment_type"
+          "id, plot_id, person_id, burial_date, interment_type, is_primary, notes"
         )
         .eq(
           "cemetery_id",
@@ -101,7 +102,7 @@ export async function loadPlotMapDataset(
       supabase
         .from("pm_map_features")
         .select(
-          "id, organization_id, cemetery_id, feature_type, label, geometry, style, metadata"
+          "id, organization_id, cemetery_id, feature_type, label, geometry, style, metadata, created_at"
         )
         .eq(
           "cemetery_id",
@@ -118,10 +119,9 @@ export async function loadPlotMapDataset(
               "plot_area",
           }
         )
-        .limit(
-          1
-        )
-        .maybeSingle(),
+        .order(
+          "created_at"
+        ),
     ]);
 
   for (
@@ -131,7 +131,7 @@ export async function loadPlotMapDataset(
       rowsResponse,
       plotsResponse,
       burialsResponse,
-      mapAreaResponse,
+      mapAreasResponse,
     ]
   ) {
     if (response.error) {
@@ -158,13 +158,9 @@ export async function loadPlotMapDataset(
     (burialsResponse.data ||
       []) as BurialRecord[];
 
-  const mapArea =
-    mapAreaResponse.data
-      ? (
-          mapAreaResponse.data as
-            MapAreaRecord
-        )
-      : null;
+  const mapAreas =
+    (mapAreasResponse.data ||
+      []) as MapAreaRecord[];
 
   const personIds =
     Array.from(
@@ -186,7 +182,7 @@ export async function loadPlotMapDataset(
       await supabase
         .from("pm_people")
         .select(
-          "id, first_name, middle_name, last_name, suffix, birth_date, death_date"
+          "id, first_name, middle_name, last_name, suffix, birth_date, death_date, obituary, biography, notes"
         )
         .in(
           "id",
@@ -269,6 +265,21 @@ export async function loadPlotMapDataset(
     );
   }
 
+  for (
+    const entries
+    of burialsByPlot.values()
+  ) {
+    entries.sort(
+      (a, b) =>
+        Number(
+          b.burial.is_primary
+        ) -
+        Number(
+          a.burial.is_primary
+        )
+    );
+  }
+
   const plots:
     PlotRecord[] =
     basePlots.map(
@@ -299,14 +310,14 @@ export async function loadPlotMapDataset(
     sections,
     rows,
     plots,
-    mapArea,
+    mapAreas,
   };
 }
 
 
 /* ==========================================================
    SERVICE 002
-   Save one real plot placement
+   Save one plot position
    ========================================================== */
 
 export async function updatePlotPlacement(
@@ -334,65 +345,12 @@ export async function updatePlotPlacement(
 
 /* ==========================================================
    SERVICE 003
-   Save MANY plot placements in one request
-   ========================================================== */
-
-export async function updatePlotPlacementsBatch(
-  placements: PlotPlacementUpdate[]
-): Promise<number> {
-  if (
-    placements.length === 0
-  ) {
-    return 0;
-  }
-
-  const response =
-    await supabase.rpc(
-      "pm_batch_update_demo_plot_placements",
-      {
-        p_placements:
-          placements.map(
-            (placement) => ({
-              plot_id:
-                placement.plotId,
-
-              longitude:
-                placement.longitude,
-
-              latitude:
-                placement.latitude,
-            })
-          ),
-      }
-    );
-
-  if (response.error) {
-    throw response.error;
-  }
-
-  const savedCount =
-    Number(
-      response.data
-    );
-
-  return Number.isFinite(
-    savedCount
-  )
-    ? savedCount
-    : placements.length;
-}
-
-
-/* ==========================================================
-   SERVICE 004
-   Create MANY new plot records from staged map clicks
-
-   No existing plot records are required.
-   The RPC creates all records in one database transaction.
+   Batch-create new plots inside one Plot Area
    ========================================================== */
 
 export async function createPlotsBatch(
   cemeteryId: string,
+  plotAreaId: string,
   placements: NewPlotPlacement[]
 ): Promise<PlotRecord[]> {
   if (
@@ -403,10 +361,13 @@ export async function createPlotsBatch(
 
   const response =
     await supabase.rpc(
-      "pm_batch_create_demo_plots",
+      "pm_batch_create_demo_plots_v2",
       {
         p_cemetery_id:
           cemeteryId,
+
+        p_plot_area_id:
+          plotAreaId,
 
         p_plots:
           placements.map(
@@ -441,8 +402,54 @@ export async function createPlotsBatch(
 
 
 /* ==========================================================
+   SERVICE 004
+   Create another Plot Area
+   ========================================================== */
+
+export async function createMapArea(
+  cemeteryId: string,
+  label: string,
+  geometry: MapAreaGeometry
+): Promise<MapAreaRecord> {
+  const response =
+    await supabase.rpc(
+      "pm_create_demo_plot_area",
+      {
+        p_cemetery_id:
+          cemeteryId,
+
+        p_label:
+          label,
+
+        p_geometry:
+          geometry,
+      }
+    );
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  const rows =
+    (response.data ||
+      []) as MapAreaRecord[];
+
+  const created =
+    rows[0];
+
+  if (!created) {
+    throw new Error(
+      "Plot Area was created but no record was returned."
+    );
+  }
+
+  return created;
+}
+
+
+/* ==========================================================
    SERVICE 005
-   Rename the map area
+   Rename an existing Plot Area
    ========================================================== */
 
 export async function updateMapAreaLabel(
@@ -468,7 +475,7 @@ export async function updateMapAreaLabel(
 
 /* ==========================================================
    SERVICE 006
-   Save the resizable map area
+   Save arbitrary polygon geometry
    ========================================================== */
 
 export async function updateMapAreaGeometry(
@@ -494,6 +501,301 @@ export async function updateMapAreaGeometry(
 
 /* ==========================================================
    SERVICE 007
+   Edit one plot record
+   ========================================================== */
+
+export async function updatePlotDetails(
+  plotId: string,
+  input: PlotEditInput
+): Promise<void> {
+  const response =
+    await supabase
+      .from("pm_plots")
+      .update({
+        plot_area_id:
+          input.plotAreaId,
+
+        plot_number:
+          input.plotNumber,
+
+        display_name:
+          input.displayName,
+
+        status:
+          input.status,
+
+        plot_type:
+          input.plotType,
+
+        notes:
+          input.notes,
+      })
+      .eq(
+        "id",
+        plotId
+      )
+      .select(
+        "id"
+      )
+      .single();
+
+  if (
+    response.error
+  ) {
+    throw response.error;
+  }
+
+  if (
+    response.data?.id !==
+    plotId
+  ) {
+    throw new Error(
+      "Plot update could not be verified."
+    );
+  }
+}
+
+
+
+/* ==========================================================
+   SERVICE 008
+   Assign many plots to one Plot Area
+   ========================================================== */
+
+export type BulkAreaAssignmentResult = {
+  requestedCount: number;
+  updatedCount: number;
+  plotAreaId: string | null;
+};
+
+export async function assignPlotsToArea(
+  plotIds: string[],
+  plotAreaId: string | null
+): Promise<BulkAreaAssignmentResult> {
+  if (
+    plotIds.length === 0
+  ) {
+    return {
+      requestedCount: 0,
+      updatedCount: 0,
+      plotAreaId,
+    };
+  }
+
+  /*
+   * SERVICE 008A
+   * Direct verified Supabase updates.
+   *
+   * Chunking avoids giant `in(...)` URLs when hundreds of
+   * plots are selected.
+   */
+  const chunkSize =
+    120;
+
+  const returnedIds =
+    new Set<string>();
+
+  for (
+    let offset = 0;
+    offset <
+      plotIds.length;
+    offset +=
+      chunkSize
+  ) {
+    const chunk =
+      plotIds.slice(
+        offset,
+        offset +
+          chunkSize
+      );
+
+    const response =
+      await supabase
+        .from("pm_plots")
+        .update({
+          plot_area_id:
+            plotAreaId,
+        })
+        .in(
+          "id",
+          chunk
+        )
+        .select(
+          "id, plot_area_id"
+        );
+
+    if (
+      response.error
+    ) {
+      throw response.error;
+    }
+
+    for (
+      const row
+      of response.data ||
+        []
+    ) {
+      if (
+        row.plot_area_id !==
+        plotAreaId
+      ) {
+        throw new Error(
+          `Plot ${row.id} returned an unexpected Plot Area after update.`
+        );
+      }
+
+      returnedIds.add(
+        row.id
+      );
+    }
+  }
+
+  if (
+    returnedIds.size !==
+    plotIds.length
+  ) {
+    throw new Error(
+      `Supabase returned ${returnedIds.size} updated plots for ${plotIds.length} requested plots.`
+    );
+  }
+
+  return {
+    requestedCount:
+      plotIds.length,
+
+    updatedCount:
+      returnedIds.size,
+
+    plotAreaId,
+  };
+}
+
+
+
+/* ==========================================================
+   SERVICE 009
+   Delete many plots in one transaction
+   ========================================================== */
+
+export async function deletePlotsBatch(
+  plotIds: string[]
+): Promise<number> {
+  if (
+    plotIds.length === 0
+  ) {
+    return 0;
+  }
+
+  const response =
+    await supabase.rpc(
+      "pm_delete_demo_plots",
+      {
+        p_plot_ids:
+          plotIds,
+      }
+    );
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return Number(
+    response.data || 0
+  );
+}
+
+
+/* ==========================================================
+   SERVICE 010
+   Create or update primary person information for one plot
+   ========================================================== */
+
+export async function savePlotPersonInfo(
+  plotId: string,
+  input: PersonEditInput
+): Promise<string> {
+  const response =
+    await supabase.rpc(
+      "pm_upsert_demo_plot_person",
+      {
+        p_plot_id:
+          plotId,
+
+        p_person_id:
+          input.personId,
+
+        p_first_name:
+          input.firstName.trim() ||
+          null,
+
+        p_middle_name:
+          input.middleName.trim() ||
+          null,
+
+        p_last_name:
+          input.lastName.trim(),
+
+        p_suffix:
+          input.suffix.trim() ||
+          null,
+
+        p_birth_date:
+          input.birthDate ||
+          null,
+
+        p_death_date:
+          input.deathDate ||
+          null,
+
+        p_obituary:
+          input.obituary.trim() ||
+          null,
+
+        p_biography:
+          input.biography.trim() ||
+          null,
+
+        p_person_notes:
+          input.personNotes.trim() ||
+          null,
+
+        p_burial_date:
+          input.burialDate ||
+          null,
+
+        p_interment_type:
+          input.intermentType,
+
+        p_burial_notes:
+          input.burialNotes.trim() ||
+          null,
+      }
+    );
+
+  if (
+    response.error
+  ) {
+    throw response.error;
+  }
+
+  const personId =
+    String(
+      response.data ||
+      ""
+    );
+
+  if (!personId) {
+    throw new Error(
+      "Person record was not returned after save."
+    );
+  }
+
+  return personId;
+}
+
+
+/* ==========================================================
+   SERVICE 011
    Presentation helpers
    ========================================================== */
 

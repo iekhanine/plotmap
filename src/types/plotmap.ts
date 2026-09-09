@@ -1,6 +1,6 @@
 /* ==========================================================
    TYPES 001
-   PlotMap data types
+   PlotMap core data types
    ========================================================== */
 
 export type PlotStatus =
@@ -54,6 +54,9 @@ export type PersonRecord = {
   suffix: string | null;
   birth_date: string | null;
   death_date: string | null;
+  obituary: string | null;
+  biography: string | null;
+  notes: string | null;
 };
 
 export type BurialRecord = {
@@ -62,15 +65,37 @@ export type BurialRecord = {
   person_id: string;
   burial_date: string | null;
   interment_type: string;
+  is_primary: boolean;
+  notes: string | null;
 };
 
-export type MapAreaGeometry = {
+
+/* ==========================================================
+   TYPES 002
+   Plot Area geometry
+
+   Polygon is the new format.
+
+   BBox remains readable only so an existing v5 area can load
+   before migration 007 converts it to a polygon.
+   ========================================================== */
+
+export type MapAreaPolygonGeometry = {
+  type: "Polygon";
+  coordinates: number[][][];
+};
+
+export type LegacyMapAreaBBoxGeometry = {
   type: "bbox";
   west: number;
   south: number;
   east: number;
   north: number;
 };
+
+export type MapAreaGeometry =
+  | MapAreaPolygonGeometry
+  | LegacyMapAreaBBoxGeometry;
 
 export type MapAreaRecord = {
   id: string;
@@ -81,14 +106,20 @@ export type MapAreaRecord = {
   geometry: MapAreaGeometry;
   style: Record<string, unknown> | null;
   metadata: Record<string, unknown> | null;
+  created_at: string | null;
 };
+
+
+/* ==========================================================
+   TYPES 003
+   Plot placement
+   ========================================================== */
 
 export type PlotPlacementUpdate = {
   plotId: string;
   longitude: number;
   latitude: number;
 };
-
 
 export type NewPlotPlacement = {
   tempId: string;
@@ -98,9 +129,50 @@ export type NewPlotPlacement = {
   latitude: number;
 };
 
+
+export type PlotEditInput = {
+  plotAreaId: string | null;
+  plotNumber: string;
+  displayName: string | null;
+  status: PlotStatus;
+  plotType: string;
+  notes: string | null;
+};
+
+
+export type PersonEditInput = {
+  personId: string | null;
+
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  suffix: string;
+
+  birthDate: string;
+  deathDate: string;
+
+  obituary: string;
+  biography: string;
+  personNotes: string;
+
+  burialDate: string;
+  intermentType: string;
+  burialNotes: string;
+};
+
 export type PlotRecord = {
   id: string;
+  organization_id?: string;
   cemetery_id: string;
+
+  /*
+   * A real plot now belongs to one geographic Plot Area.
+   */
+  plot_area_id: string | null;
+
+  /*
+   * Sections/rows remain optional organizational metadata.
+   */
   section_id: string;
   row_id: string | null;
 
@@ -110,21 +182,16 @@ export type PlotRecord = {
   status: PlotStatus;
   plot_type: string;
 
-  /*
-   * Legacy synthetic placement.
-   */
   x: number | null;
   y: number | null;
   width: number | null;
   height: number | null;
   rotation: number;
 
-  /*
-   * Real geographic placement.
-   */
   longitude: number | null;
   latitude: number | null;
 
+  geometry?: Record<string, unknown> | null;
   notes: string | null;
 
   section?: SectionRecord;
@@ -136,18 +203,21 @@ export type PlotRecord = {
   }>;
 };
 
+
+/* ==========================================================
+   TYPES 004
+   Complete map dataset
+   ========================================================== */
+
 export type PlotMapDataset = {
   cemetery: CemeteryRecord;
 
-  /*
-   * Sections / rows are organizational metadata.
-   */
   sections: SectionRecord[];
   rows: RowRecord[];
   plots: PlotRecord[];
 
   /*
-   * One visual working boundary.
+   * Multiple independent geographic Plot Areas.
    */
-  mapArea: MapAreaRecord | null;
+  mapAreas: MapAreaRecord[];
 };

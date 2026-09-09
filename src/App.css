@@ -1,6 +1,6 @@
 /* ==========================================================
    APP CSS 001
-   PlotMap application shell
+   PlotMap compact shell
    ========================================================== */
 
 :root {
@@ -9,14 +9,11 @@
   --pm-panel-2: #1d2226;
   --pm-border: #2a3035;
   --pm-text: #f2f5f6;
-  --pm-muted: #97a0a7;
-  --pm-accent: #e6ecef;
-
-  --pm-available: #27ae60;
-  --pm-occupied: #d64541;
-  --pm-reserved: #f5a623;
-  --pm-unavailable: #697179;
-  --pm-mapped: #46beff;
+  --pm-muted: #879198;
+  --pm-blue: #46beff;
+  --pm-green: #27ae60;
+  --pm-red: #d64541;
+  --pm-orange: #f5a623;
 }
 
 * {
@@ -33,14 +30,13 @@ button {
 }
 
 button:disabled {
-  opacity: 0.58;
+  opacity: 0.45;
   cursor: default;
 }
 
 .plotmap-shell {
   width: 100%;
   height: 100vh;
-  min-height: 620px;
   overflow: hidden;
   background: var(--pm-bg);
   color: var(--pm-text);
@@ -53,11 +49,11 @@ button:disabled {
    ========================================================== */
 
 .plotmap-header {
-  height: 54px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 14px;
   border-bottom: 1px solid var(--pm-border);
   background: #121619;
 }
@@ -65,16 +61,16 @@ button:disabled {
 .plotmap-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .plotmap-brand-icon {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #3a4248;
-  border-radius: 8px;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
+  border: 1px solid #364047;
+  border-radius: 6px;
   background: #1b2024;
 }
 
@@ -84,76 +80,67 @@ button:disabled {
 }
 
 .plotmap-brand strong {
-  font-size: 14px;
-  line-height: 16px;
-  letter-spacing: 0.2px;
+  font-size: 13px;
 }
 
 .plotmap-brand span {
-  margin-top: 2px;
+  margin-top: 1px;
   color: var(--pm-muted);
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .plotmap-header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .editor-toggle {
-  height: 29px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 9px;
-  border: 1px solid #343b40;
-  border-radius: 5px;
-  background: #1b2024;
-  color: #b9c1c6;
-  font-size: 10px;
+  gap: 5px;
+  padding: 0 8px;
+  border: 1px solid #354047;
+  border-radius: 4px;
+  background: #1a2024;
+  font-size: 9px;
   cursor: pointer;
 }
 
-.editor-toggle:hover {
-  border-color: #59646b;
-  color: #fff;
-}
-
 .editor-toggle.active {
-  border-color: var(--pm-mapped);
-  background: rgba(70, 190, 255, 0.12);
-  color: #8bdcff;
+  border-color: var(--pm-blue);
+  color: #a9e6ff;
+  background: rgba(70, 190, 255, 0.1);
 }
 
 .plotmap-header-status {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   color: var(--pm-muted);
-  font-size: 11px;
+  font-size: 9px;
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #6d7378;
+  background: #777;
 }
 
 .status-dot.ready {
-  background: var(--pm-available);
-  box-shadow: 0 0 8px rgba(39, 174, 96, 0.55);
+  background: var(--pm-green);
 }
 
 
 /* ==========================================================
    APP CSS 003
-   Workspace / sidebar
+   Sidebar
    ========================================================== */
 
 .plotmap-workspace {
-  height: calc(100vh - 54px);
+  height: calc(100vh - 52px);
   display: grid;
   grid-template-columns: 310px minmax(0, 1fr);
 }
@@ -167,78 +154,217 @@ button:disabled {
 }
 
 .cemetery-summary {
-  padding: 16px;
+  padding: 13px;
   border-bottom: 1px solid var(--pm-border);
 }
 
 .eyebrow {
-  color: #77828a;
-  font-size: 9px;
-  letter-spacing: 1.2px;
+  color: #748087;
+  font-size: 8px;
   font-weight: 700;
+  letter-spacing: 1px;
 }
 
 .cemetery-summary h1 {
-  margin: 6px 0 4px;
-  font-size: 15px;
-  line-height: 20px;
+  margin: 4px 0 2px;
+  font-size: 14px;
+  line-height: 18px;
 }
 
 .cemetery-summary p {
   margin: 0;
   color: var(--pm-muted);
-  font-size: 10px;
+  font-size: 9px;
 }
 
-.editor-sidebar-note {
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(70, 190, 255, 0.28);
-  background: rgba(70, 190, 255, 0.07);
+
+/* ==========================================================
+   APP CSS 004
+   Multiple Plot Areas editor
+   ========================================================== */
+
+.area-manager {
+  padding: 10px;
+  border-bottom: 1px solid var(--pm-border);
+  background: #151b1e;
 }
 
-.editor-sidebar-note strong,
-.editor-sidebar-note span,
-.editor-sidebar-note small {
+.area-manager-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.area-manager-heading > span {
+  color: #819099;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.area-manager-heading button {
+  height: 25px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border: 1px solid rgba(70,190,255,0.35);
+  border-radius: 4px;
+  background: rgba(70,190,255,0.08);
+  color: #9de3ff;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.area-list {
+  display: grid;
+  gap: 4px;
+  max-height: 122px;
+  margin-top: 8px;
+  overflow-y: auto;
+}
+
+.area-list-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: #111719;
+  text-align: left;
+  cursor: pointer;
+}
+
+.area-list-item:hover {
+  background: #1a2226;
+}
+
+.area-list-item.selected {
+  border-color: rgba(70,190,255,0.55);
+  background: rgba(70,190,255,0.08);
+}
+
+.area-list-item > svg {
+  flex: 0 0 auto;
+  color: var(--pm-blue);
+}
+
+.area-list-item span {
+  min-width: 0;
+}
+
+.area-list-item strong,
+.area-list-item small {
   display: block;
 }
 
-.editor-sidebar-note strong {
-  color: #83d9ff;
+.area-list-item strong {
+  overflow: hidden;
+  color: #e0e7ea;
   font-size: 9px;
-  letter-spacing: 0.9px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.editor-sidebar-note span {
-  margin-top: 4px;
-  color: #d4e3e9;
-  font-size: 10px;
+.area-list-item small {
+  margin-top: 1px;
+  color: #718087;
+  font-size: 8px;
 }
 
-.editor-sidebar-note small {
-  margin-top: 4px;
-  color: #75868e;
+.selected-area-editor {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #293238;
+}
+
+.selected-area-editor label {
+  display: block;
+  margin-bottom: 4px;
+  color: #78858d;
+  font-size: 8px;
+}
+
+.area-name-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 4px;
+}
+
+.area-name-row input {
+  min-width: 0;
+  height: 27px;
+  padding: 0 7px;
+  border: 1px solid #334047;
+  border-radius: 4px;
+  outline: none;
+  background: #101518;
+  color: #e7edef;
   font-size: 9px;
 }
+
+.area-name-row input:focus {
+  border-color: var(--pm-blue);
+}
+
+.area-name-row button,
+.area-action-grid button {
+  border: 1px solid #38444b;
+  border-radius: 4px;
+  background: #1b2226;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.area-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.area-action-grid button {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.editor-message {
+  margin-top: 7px;
+  color: #7e8e96;
+  font-size: 8px;
+  line-height: 11px;
+}
+
+
+/* ==========================================================
+   APP CSS 005
+   Search / stats / plot list
+   ========================================================== */
 
 .search-section {
-  padding: 12px;
+  padding: 10px;
   border-bottom: 1px solid var(--pm-border);
 }
 
 .search-box {
-  height: 34px;
+  height: 31px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 9px;
-  border: 1px solid #343b40;
-  border-radius: 6px;
-  background: #111518;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid #333d43;
+  border-radius: 5px;
+  background: #101518;
 }
 
 .search-box svg {
-  flex: 0 0 auto;
-  color: #7e8990;
+  color: #77838a;
 }
 
 .search-box input {
@@ -246,13 +372,9 @@ button:disabled {
   min-width: 0;
   border: 0;
   outline: 0;
-  color: var(--pm-text);
   background: transparent;
-  font-size: 11px;
-}
-
-.search-box input::placeholder {
-  color: #69737a;
+  color: #e9edef;
+  font-size: 10px;
 }
 
 .icon-button {
@@ -260,55 +382,42 @@ button:disabled {
   border: 0;
   background: transparent;
   cursor: pointer;
-  display: grid;
-  place-items: center;
 }
 
 .filter-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 8px;
+  gap: 4px;
+  margin-top: 6px;
 }
 
 .filter-chip {
-  padding: 4px 7px;
-  border: 1px solid #343a3f;
+  padding: 3px 6px;
+  border: 1px solid #353f44;
   border-radius: 999px;
   background: transparent;
-  color: #9ca5ab;
-  font-size: 9px;
+  color: #8d989e;
+  font-size: 8px;
   cursor: pointer;
 }
 
-.filter-chip:hover {
-  border-color: #56616a;
-}
-
 .filter-chip.active {
-  border-color: #e8ecef;
-  color: #111518;
-  background: #e8ecef;
+  background: #e7edef;
+  color: #101416;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   border-bottom: 1px solid var(--pm-border);
 }
 
 .stats-grid > div {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-right: 1px solid var(--pm-border);
-  border-bottom: 1px solid var(--pm-border);
 }
 
-.stats-grid > div:nth-child(even) {
+.stats-grid > div:last-child {
   border-right: 0;
-}
-
-.stats-grid > div:nth-last-child(-n + 2) {
-  border-bottom: 0;
 }
 
 .stats-grid strong,
@@ -317,13 +426,13 @@ button:disabled {
 }
 
 .stats-grid strong {
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .stats-grid span {
-  margin-top: 2px;
+  margin-top: 1px;
   color: var(--pm-muted);
-  font-size: 9px;
+  font-size: 8px;
 }
 
 .results-section {
@@ -334,94 +443,69 @@ button:disabled {
 }
 
 .section-heading {
-  height: 34px;
-  flex: 0 0 auto;
+  height: 31px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 10px;
   border-bottom: 1px solid var(--pm-border);
-  color: #b5bdc2;
-  font-size: 10px;
-  font-weight: 600;
+  color: #a6b0b5;
+  font-size: 9px;
 }
 
 .section-heading small {
-  min-width: 24px;
-  padding: 2px 5px;
-  border-radius: 999px;
-  text-align: center;
-  background: #23292d;
-  color: #818b92;
-  font-size: 9px;
+  color: #758087;
 }
 
 .results-list {
   min-height: 0;
   overflow-y: auto;
-  padding: 5px;
+  padding: 4px;
 }
 
 .result-card {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
+  gap: 7px;
+  padding: 7px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 4px;
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 
 .result-card:hover {
-  background: #1d2327;
+  background: #1c2327;
 }
 
 .result-card.selected {
-  border-color: #46515a;
-  background: #242a2f;
+  border-color: #46545c;
+  background: #232b30;
 }
 
 .plot-status {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   flex: 0 0 auto;
   border-radius: 2px;
 }
 
-.plot-status.available,
-.legend.available {
-  background: var(--pm-available);
+.plot-status.available {
+  background: var(--pm-green);
 }
 
-.plot-status.occupied,
-.legend.occupied {
-  background: var(--pm-occupied);
+.plot-status.occupied {
+  background: var(--pm-red);
 }
 
-.plot-status.reserved,
-.legend.reserved {
-  background: var(--pm-reserved);
+.plot-status.reserved {
+  background: var(--pm-orange);
 }
 
 .plot-status.unavailable {
-  background: var(--pm-unavailable);
-}
-
-.legend.mapped,
-.mapped-dot {
-  background: var(--pm-mapped);
-}
-
-.mapped-dot {
-  width: 5px;
-  height: 5px;
-  flex: 0 0 auto;
-  margin-left: auto;
-  border-radius: 50%;
-  box-shadow: 0 0 5px rgba(70, 190, 255, 0.55);
+  background: #707980;
 }
 
 .result-copy {
@@ -437,20 +521,19 @@ button:disabled {
 }
 
 .result-copy strong {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9px;
 }
 
 .result-copy small {
   margin-top: 2px;
-  color: #7f8990;
-  font-size: 9px;
+  color: #76838a;
+  font-size: 8px;
 }
 
 
 /* ==========================================================
-   APP CSS 004
-   Map panel
+   APP CSS 006
+   Map
    ========================================================== */
 
 .plotmap-map-panel {
@@ -465,142 +548,291 @@ button:disabled {
   inset: 0;
 }
 
-.plotmap-map.placing .ol-viewport {
+.plotmap-map.editing .ol-viewport {
   cursor: crosshair;
 }
 
 .map-toolbar {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 5;
+  top: 10px;
+  left: 10px;
+  z-index: 8;
 }
 
 .map-toolbar button {
-  height: 30px;
+  height: 29px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 9px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 5px;
-  background: rgba(18, 22, 25, 0.9);
-  color: #e9edef;
-  font-size: 10px;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-}
-
-.map-editor-hint {
-  position: absolute;
-  top: 12px;
-  left: 116px;
-  z-index: 5;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: min(520px, calc(100% - 470px));
-  padding: 0 10px;
-  border: 1px solid rgba(70, 190, 255, 0.38);
-  border-radius: 5px;
-  overflow: hidden;
-  background: rgba(15, 30, 37, 0.94);
-  color: #9fdefb;
-  font-size: 9px;
-  backdrop-filter: blur(6px);
-}
-
-.map-editor-hint span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.map-editor-hint.placing {
-  border-color: #65d7ff;
-  background: rgba(17, 47, 59, 0.96);
-  color: #d9f5ff;
-  box-shadow: 0 0 18px rgba(70, 190, 255, 0.16);
-}
-
-.map-legend {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 5;
-  display: flex;
-  gap: 10px;
-  padding: 7px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 5px;
-  background: rgba(18, 22, 25, 0.9);
-  backdrop-filter: blur(6px);
-}
-
-.map-legend span {
-  display: flex;
-  align-items: center;
   gap: 5px;
-  color: #c4cbd0;
+  padding: 0 8px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 4px;
+  background: rgba(16,20,23,0.92);
+  color: #e3e9eb;
   font-size: 9px;
+  cursor: pointer;
 }
 
-.legend {
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
+.map-editor-status {
+  position: absolute;
+  top: 48px;
+  left: 10px;
+  z-index: 8;
+  max-width: 620px;
+  padding: 7px 9px;
+  border: 1px solid rgba(70,190,255,0.38);
+  border-radius: 4px;
+  background: rgba(12,20,24,0.94);
+  color: #a8deef;
+  font-size: 8px;
 }
 
 .prototype-notice {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: 10px;
+  z-index: 7;
   transform: translateX(-50%);
-  z-index: 5;
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 5px;
-  background: rgba(12, 15, 17, 0.86);
-  color: #a7b0b6;
-  font-size: 9px;
-  backdrop-filter: blur(6px);
+  padding: 5px 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  background: rgba(12,15,17,0.86);
+  color: #8f9ba1;
+  font-size: 8px;
 }
+
+
+/* ==========================================================
+   APP CSS 007
+   Floating editor panels
+   ========================================================== */
+
+.floating-editor-panel {
+  position: absolute;
+  top: 82px;
+  left: 10px;
+  z-index: 9;
+  width: 300px;
+  padding: 11px;
+  border: 1px solid rgba(70,190,255,0.42);
+  border-radius: 6px;
+  background: rgba(16,21,24,0.97);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.38);
+}
+
+.floating-editor-panel strong {
+  display: block;
+  font-size: 11px;
+}
+
+.floating-editor-panel p {
+  margin: 6px 0;
+  color: #849197;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+.floating-editor-panel label {
+  display: block;
+  margin: 8px 0 4px;
+  color: #7e8b92;
+  font-size: 8px;
+}
+
+.floating-editor-panel input {
+  width: 100%;
+  height: 29px;
+  padding: 0 7px;
+  border: 1px solid #35434a;
+  border-radius: 4px;
+  outline: 0;
+  background: #0f1518;
+  color: #edf2f4;
+  font-size: 9px;
+}
+
+.floating-actions {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.batch-next {
+  margin-top: 8px;
+  padding: 7px;
+  border: 1px solid #2f3b40;
+  border-radius: 4px;
+  background: #101619;
+  color: #a4b2b8;
+  font-size: 9px;
+}
+
+.batch-count {
+  margin-top: 5px;
+  color: #7d8b91;
+  font-size: 8px;
+}
+
+.batch-three-actions {
+  display: grid;
+  grid-template-columns: 0.8fr 0.8fr 1fr;
+  gap: 4px;
+  margin-top: 9px;
+}
+
+.primary-action,
+.secondary-action {
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-action {
+  border: 1px solid #e9edef;
+  background: #e9edef;
+  color: #101416;
+}
+
+.secondary-action {
+  border: 1px solid #3b474d;
+  background: #1a2125;
+  color: #b4bec3;
+}
+
+.primary-action.full {
+  width: 100%;
+}
+
+
+/* ==========================================================
+   APP CSS 008
+   Plot detail
+   ========================================================== */
+
+.plot-detail-card {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 8;
+  width: 270px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.17);
+  border-radius: 6px;
+  background: rgba(17,21,24,0.96);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+}
+
+.detail-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: #859098;
+  cursor: pointer;
+}
+
+.detail-status {
+  display: inline-block;
+  padding: 2px 5px;
+  border-radius: 999px;
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detail-status.available {
+  background: rgba(39,174,96,0.16);
+  color: #72d69a;
+}
+
+.detail-status.occupied {
+  background: rgba(214,69,65,0.16);
+  color: #ef8c89;
+}
+
+.detail-status.reserved {
+  background: rgba(245,166,35,0.16);
+  color: #f2c36b;
+}
+
+.detail-status.unavailable {
+  background: rgba(112,121,128,0.16);
+  color: #a8b0b5;
+}
+
+.plot-detail-card h2 {
+  margin: 8px 24px 10px 0;
+  font-size: 15px;
+}
+
+.plot-detail-card dl {
+  margin: 0 0 10px;
+  border-top: 1px solid #2b3338;
+}
+
+.plot-detail-card dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #272f33;
+}
+
+.plot-detail-card dt {
+  color: #77838a;
+  font-size: 8px;
+}
+
+.plot-detail-card dd {
+  margin: 0;
+  color: #dde4e7;
+  font-size: 8px;
+  text-align: right;
+}
+
+
+/* ==========================================================
+   APP CSS 009
+   Loading
+   ========================================================== */
 
 .map-loading,
 .map-error {
   position: absolute;
   inset: 0;
-  z-index: 10;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
   gap: 8px;
-  background: rgba(9, 11, 12, 0.92);
-}
-
-.map-loading strong,
-.map-error strong {
-  font-size: 13px;
-}
-
-.map-loading span,
-.map-error span {
-  max-width: 420px;
-  color: #8d979e;
+  flex-direction: column;
+  background: rgba(9,11,12,0.92);
+  color: #d8e0e3;
   font-size: 10px;
-  text-align: center;
+}
+
+.map-error span {
+  color: #929da3;
 }
 
 .spin {
-  animation: plotmap-spin 1s linear infinite;
+  animation: pm-spin 1s linear infinite;
 }
 
-@keyframes plotmap-spin {
+@keyframes pm-spin {
   to {
     transform: rotate(360deg);
   }
@@ -608,695 +840,556 @@ button:disabled {
 
 
 /* ==========================================================
-   APP CSS 005
-   Plot detail card
-   ========================================================== */
-
-.plot-detail-card {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 6;
-  width: 280px;
-  padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
-  background: rgba(18, 22, 25, 0.96);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
-}
-
-.plot-detail-card.editor-active {
-  border-color: rgba(70, 190, 255, 0.42);
-}
-
-.detail-close {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  padding: 3px;
-  border: 0;
-  background: transparent;
-  color: #8f999f;
-  cursor: pointer;
-}
-
-.detail-badges {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.detail-status,
-.placement-badge {
-  display: inline-block;
-  padding: 3px 6px;
-  border-radius: 999px;
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detail-status.available {
-  background: rgba(39, 174, 96, 0.18);
-  color: #74d99d;
-}
-
-.detail-status.occupied {
-  background: rgba(214, 69, 65, 0.18);
-  color: #ef8b88;
-}
-
-.detail-status.reserved {
-  background: rgba(245, 166, 35, 0.18);
-  color: #f4c873;
-}
-
-.detail-status.unavailable {
-  background: rgba(105, 113, 121, 0.18);
-  color: #a8b0b6;
-}
-
-.placement-badge {
-  background: rgba(105, 113, 121, 0.15);
-  color: #8e9aa2;
-}
-
-.placement-badge.mapped {
-  background: rgba(70, 190, 255, 0.15);
-  color: #7ed8ff;
-}
-
-.plot-detail-card h2 {
-  margin: 10px 24px 0 0;
-  font-size: 16px;
-  line-height: 20px;
-}
-
-.life-dates {
-  margin: 3px 0 0;
-  color: #98a1a7;
-  font-size: 10px;
-}
-
-.plot-detail-card dl {
-  margin: 14px 0;
-  border-top: 1px solid #30373c;
-}
-
-.plot-detail-card dl > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 7px 0;
-  border-bottom: 1px solid #292f33;
-}
-
-.plot-detail-card dt {
-  color: #818b92;
-  font-size: 9px;
-}
-
-.plot-detail-card dd {
-  margin: 0;
-  color: #e2e7e9;
-  font-size: 9px;
-  text-transform: capitalize;
-}
-
-
-/* ==========================================================
-   APP CSS 006
-   Map editor placement controls
-   ========================================================== */
-
-.placement-panel {
-  margin: 12px 0;
-  padding: 10px;
-  border: 1px solid #2d3c43;
-  border-radius: 6px;
-  background: #12191d;
-}
-
-.placement-panel-heading {
-  margin-bottom: 7px;
-  color: #a8dff5;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.coordinate-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 4px 0;
-}
-
-.coordinate-row span {
-  color: #78878f;
-  font-size: 8px;
-}
-
-.coordinate-row code {
-  color: #d8e7ed;
-  font-size: 9px;
-}
-
-.placement-help {
-  margin: 7px 0 0;
-  color: #718087;
-  font-size: 8px;
-  line-height: 12px;
-}
-
-.placement-help.pending {
-  color: #78cfee;
-}
-
-.editor-message {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #26343a;
-  color: #9eb2ba;
-  font-size: 8px;
-  line-height: 12px;
-}
-
-.detail-actions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-}
-
-.detail-actions:has(.secondary-action + .primary-action) {
-  grid-template-columns: 0.75fr 1.25fr;
-}
-
-.detail-actions.split {
-  grid-template-columns: 0.7fr 1.3fr;
-}
-
-.primary-action,
-.secondary-action {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 5px;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.primary-action {
-  border: 1px solid #e8ecef;
-  background: #e8ecef;
-  color: #101416;
-}
-
-.secondary-action {
-  border: 1px solid #3b454b;
-  background: #1a2024;
-  color: #b9c2c7;
-}
-
-.secondary-action:hover {
-  border-color: #65727a;
-  color: #fff;
-}
-
-
-/* ==========================================================
-   APP CSS 007
+   APP CSS 010
    Responsive
    ========================================================== */
 
-@media (max-width: 920px) {
-  .map-editor-hint {
-    max-width: 310px;
-  }
-}
-
-@media (max-width: 820px) {
+@media (max-width: 850px) {
   .plotmap-workspace {
-    grid-template-columns: 250px minmax(0, 1fr);
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .floating-editor-panel {
+    width: 260px;
   }
 
   .prototype-notice {
     display: none;
   }
-
-  .plot-detail-card {
-    width: 240px;
-  }
-
-  .map-editor-hint {
-    display: none;
-  }
-}
-
-@media (max-width: 650px) {
-  .plotmap-workspace {
-    display: block;
-  }
-
-  .plotmap-sidebar {
-    display: none;
-  }
-
-  .plotmap-map-panel {
-    height: 100%;
-  }
-
-  .plotmap-header-actions {
-    gap: 6px;
-  }
-
-  .plotmap-header-status {
-    display: none;
-  }
-}
-
-
-/* ==========================================================
-   APP CSS 008
-   Map Editor v2 — ONE resizable Plot Area
-   ========================================================== */
-
-.area-editor-card {
-  margin-top: 10px;
-  padding: 9px;
-  border: 1px solid rgba(70, 190, 255, 0.28);
-  border-radius: 6px;
-  background: rgba(10, 24, 30, 0.55);
-}
-
-.area-editor-card > div {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-}
-
-.area-editor-card > div > svg {
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: var(--pm-mapped);
-}
-
-.area-editor-card > div > span {
-  min-width: 0;
-}
-
-.area-editor-card b,
-.area-editor-card small {
-  display: block;
-}
-
-.area-editor-card b {
-  color: #d9f3ff;
-  font-size: 9px;
-}
-
-.area-editor-card small {
-  margin-top: 2px;
-  color: #728891;
-  font-size: 8px;
-  line-height: 11px;
-}
-
-.area-editor-card button {
-  width: 100%;
-  height: 27px;
-  margin-top: 8px;
-  border: 1px solid rgba(70, 190, 255, 0.42);
-  border-radius: 4px;
-  background: rgba(70, 190, 255, 0.11);
-  color: #8edfff;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.area-editor-card button:hover:not(:disabled) {
-  background: rgba(70, 190, 255, 0.18);
-}
-
-.map-toolbar {
-  display: flex;
-  gap: 5px;
-}
-
-.plotmap-map.editing .ol-viewport {
-  cursor: crosshair;
-}
-
-.map-editor-hint.area-resize {
-  border-color: #46beff;
-  background: rgba(12, 42, 54, 0.96);
-  color: #dff7ff;
-  box-shadow: 0 0 20px rgba(70, 190, 255, 0.18);
-}
-
-.area-save-panel {
-  position: absolute;
-  top: 52px;
-  left: 12px;
-  z-index: 8;
-  width: 310px;
-  padding: 11px;
-  border: 1px solid rgba(70, 190, 255, 0.48);
-  border-radius: 7px;
-  background: rgba(15, 21, 24, 0.96);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
-}
-
-.area-save-panel strong,
-.area-save-panel > div:first-child > span {
-  display: block;
-}
-
-.area-save-panel strong {
-  color: #e8f7fd;
-  font-size: 11px;
-}
-
-.area-save-panel > div:first-child > span {
-  margin-top: 3px;
-  color: #83949c;
-  font-size: 8px;
-  line-height: 12px;
-}
-
-.area-coordinates {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin-top: 9px;
-  padding: 7px;
-  border: 1px solid #29373d;
-  border-radius: 4px;
-  background: #101619;
-}
-
-.area-coordinates span {
-  color: #8aa4af;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 8px;
-}
-
-.area-save-actions {
-  display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
-  gap: 6px;
-  margin-top: 9px;
-}
-
-@media (max-width: 820px) {
-  .area-save-panel {
-    width: 250px;
-  }
-}
-
-
-/* ==========================================================
-   APP CSS 009
-   Map Editor v3 — toolbar overlap fix + batch placement
-   ========================================================== */
-
-/*
- * FIX:
- * The editor instruction banner used to begin at left:116px,
- * which put it on top of the Plot Area toolbar button.
- *
- * Keep the whole toolbar on row 1.
- * Put editor instructions on row 2.
- */
-.map-editor-hint {
-  top: 52px !important;
-  left: 12px !important;
-  max-width: min(620px, calc(100% - 330px)) !important;
-}
-
-/*
- * Panels now begin below the toolbar AND the editor hint.
- */
-.area-save-panel {
-  top: 92px !important;
-}
-
-.batch-editor-card {
-  margin-top: 8px;
-  padding: 9px;
-  border: 1px solid rgba(91, 216, 161, 0.28);
-  border-radius: 6px;
-  background: rgba(12, 31, 24, 0.5);
-}
-
-.batch-editor-card > div {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-}
-
-.batch-editor-card > div > svg {
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: #64dba4;
-}
-
-.batch-editor-card > div > span {
-  min-width: 0;
-}
-
-.batch-editor-card b,
-.batch-editor-card small {
-  display: block;
-}
-
-.batch-editor-card b {
-  color: #dff8ec;
-  font-size: 9px;
-}
-
-.batch-editor-card small {
-  margin-top: 2px;
-  color: #789184;
-  font-size: 8px;
-  line-height: 11px;
-}
-
-.batch-editor-card button {
-  width: 100%;
-  min-height: 28px;
-  margin-top: 8px;
-  border: 1px solid rgba(91, 216, 161, 0.38);
-  border-radius: 4px;
-  background: rgba(91, 216, 161, 0.1);
-  color: #91e7bd;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.batch-editor-card button:hover:not(:disabled) {
-  background: rgba(91, 216, 161, 0.17);
-}
-
-.map-editor-hint.batch-place {
-  border-color: rgba(91, 216, 161, 0.7);
-  background: rgba(11, 38, 27, 0.96);
-  color: #dff8ec;
-  box-shadow: 0 0 20px rgba(91, 216, 161, 0.13);
-}
-
-.batch-save-panel {
-  position: absolute;
-  top: 92px;
-  left: 12px;
-  z-index: 8;
-  width: 330px;
-  padding: 11px;
-  border: 1px solid rgba(91, 216, 161, 0.45);
-  border-radius: 7px;
-  background: rgba(15, 21, 18, 0.97);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.36);
-  backdrop-filter: blur(10px);
-}
-
-.batch-save-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.batch-save-heading strong,
-.batch-save-heading span {
-  display: block;
-}
-
-.batch-save-heading strong {
-  color: #e9fff4;
-  font-size: 11px;
-}
-
-.batch-save-heading span {
-  margin-top: 2px;
-  color: #7f9588;
-  font-size: 8px;
-}
-
-.batch-save-heading b {
-  flex: 0 0 auto;
-  padding: 4px 7px;
-  border-radius: 999px;
-  background: rgba(91, 216, 161, 0.12);
-  color: #91e7bd;
-  font-size: 9px;
-}
-
-.batch-next {
-  margin-top: 9px;
-  padding: 8px;
-  border: 1px solid #2a3830;
-  border-radius: 5px;
-  background: #101713;
-}
-
-.batch-next small,
-.batch-next strong {
-  display: block;
-}
-
-.batch-next small {
-  color: #708277;
-  font-size: 7px;
-  letter-spacing: 0.7px;
-}
-
-.batch-next strong {
-  margin-top: 3px;
-  color: #dce9e1;
-  font-size: 9px;
-}
-
-.batch-progress {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 7px;
-  color: #829188;
-  font-size: 8px;
-}
-
-.batch-message {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #29372f;
-  color: #91a49a;
-  font-size: 8px;
-  line-height: 12px;
-}
-
-.batch-actions {
-  display: grid;
-  grid-template-columns: 1fr 0.75fr 1fr;
-  gap: 5px;
-  margin-top: 9px;
-}
-
-.batch-actions .primary-action,
-.batch-actions .secondary-action {
-  min-width: 0;
-  padding: 0 6px;
-}
-
-@media (max-width: 900px) {
-  .map-editor-hint {
-    max-width: min(430px, calc(100% - 280px)) !important;
-  }
-
-  .batch-save-panel {
-    width: 290px;
-  }
-}
-
-@media (max-width: 760px) {
-  .map-editor-hint {
-    display: none !important;
-  }
-
-  .area-save-panel,
-  .batch-save-panel {
-    top: 52px !important;
-  }
-}
-
-
-/* ==========================================================
-   APP CSS 010
-   Map Editor v4 — custom area name
-   ========================================================== */
-
-.area-name-editor {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center !important;
-  gap: 5px !important;
-  margin-top: 8px;
-}
-
-.area-name-editor input {
-  width: 100%;
-  min-width: 0;
-  height: 28px;
-  padding: 0 7px;
-  border: 1px solid #34434a;
-  border-radius: 4px;
-  outline: none;
-  background: #101619;
-  color: #e6f3f8;
-  font-size: 9px;
-}
-
-.area-name-editor input:focus {
-  border-color: rgba(70, 190, 255, 0.72);
-}
-
-.area-name-editor input:disabled {
-  opacity: 0.55;
-}
-
-.area-name-editor .area-name-save {
-  width: auto;
-  min-width: 72px;
-  height: 28px;
-  margin-top: 0;
-  padding: 0 8px;
-  white-space: nowrap;
 }
 
 
 /* ==========================================================
    APP CSS 011
-   Map Editor v5 — freeform batch create
+   Plot Manager — multi-select / bulk actions
    ========================================================== */
 
-.batch-editor-card button {
-  opacity: 1;
+.plot-list-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.batch-editor-card button:disabled {
-  opacity: 0.5;
+.selection-toggle {
+  height: 23px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border: 1px solid #354047;
+  border-radius: 4px;
+  background: #171d20;
+  color: #929da3;
+  font-size: 8px;
+  cursor: pointer;
 }
 
-.batch-next strong {
-  font-size: 11px;
-  color: #eafff4;
+.selection-toggle.active {
+  border-color: var(--pm-blue);
+  color: #a8e5ff;
+}
+
+.bulk-plot-toolbar {
+  padding: 7px;
+  border-bottom: 1px solid var(--pm-border);
+  background: #111719;
+}
+
+.bulk-selection-row,
+.bulk-area-row,
+.delete-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bulk-selection-row {
+  margin-bottom: 5px;
+}
+
+.bulk-selection-row span {
+  flex: 1;
+  color: #91a0a8;
+  font-size: 8px;
+}
+
+.bulk-selection-row button,
+.bulk-area-row button,
+.delete-confirm-row button {
+  min-height: 24px;
+  padding: 0 6px;
+  border: 1px solid #374248;
+  border-radius: 4px;
+  background: #1b2226;
+  color: #b1bbc0;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.bulk-area-row select {
+  min-width: 0;
+  flex: 1;
+  height: 27px;
+  border: 1px solid #354147;
+  border-radius: 4px;
+  background: #101619;
+  color: #dce4e7;
+  font-size: 8px;
+}
+
+.bulk-area-row .bulk-assign {
+  color: #9ee3ff;
+  border-color: rgba(70,190,255,0.38);
+}
+
+.bulk-delete {
+  width: 100%;
+  min-height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 5px;
+  border: 1px solid rgba(214,69,65,0.38);
+  border-radius: 4px;
+  background: rgba(214,69,65,0.08);
+  color: #ee9693;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.delete-confirm-row {
+  margin-top: 5px;
+  padding: 5px;
+  border: 1px solid rgba(214,69,65,0.30);
+  border-radius: 4px;
+  background: rgba(214,69,65,0.07);
+}
+
+.delete-confirm-row span {
+  flex: 1;
+  color: #dca09e;
+  font-size: 8px;
+}
+
+.delete-confirm-row .confirm-delete {
+  border-color: #d64541;
+  background: #d64541;
+  color: #fff;
+}
+
+.plot-checkbox {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid #49545a;
+  border-radius: 3px;
+  color: #101416;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.plot-checkbox.checked {
+  border-color: var(--pm-blue);
+  background: var(--pm-blue);
+}
+
+.result-card.bulk-selected {
+  border-color: rgba(70,190,255,0.42);
+  background: rgba(70,190,255,0.08);
+}
+
+
+/* ==========================================================
+   APP CSS 012
+   Plot Manager — plot editor
+   ========================================================== */
+
+.plot-edit-form {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.plot-edit-form label {
+  margin-top: 2px;
+  color: #78858c;
+  font-size: 8px;
+}
+
+.plot-edit-form input,
+.plot-edit-form select,
+.plot-edit-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #354147;
+  border-radius: 4px;
+  outline: 0;
+  background: #101619;
+  color: #e5ecef;
+  font-size: 9px;
+}
+
+.plot-edit-form input,
+.plot-edit-form select {
+  height: 28px;
+  padding: 0 7px;
+}
+
+.plot-edit-form textarea {
+  resize: vertical;
+  min-height: 54px;
+  padding: 6px 7px;
+  font-family: inherit;
+}
+
+.plot-edit-form input:focus,
+.plot-edit-form select:focus,
+.plot-edit-form textarea:focus {
+  border-color: var(--pm-blue);
+}
+
+.plot-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.plot-edit-grid > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+
+/* ==========================================================
+   APP CSS 013
+   v10 — fixed sidebar scrolling
+   ========================================================== */
+
+.plotmap-sidebar {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.results-section {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.results-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.results-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.results-list::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: #39454b;
+}
+
+.results-list::-webkit-scrollbar-track {
+  background: #121719;
+}
+
+
+/* ==========================================================
+   APP CSS 014
+   v10 — draggable floating windows
+   ========================================================== */
+
+.draggable-window {
+  user-select: none;
+  touch-action: none;
+}
+
+.draggable-titlebar {
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  border-bottom: 1px solid #303a40;
+  background: #11171a;
+  cursor: move;
+}
+
+.draggable-titlebar > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.draggable-titlebar strong {
+  color: #bcc9cf;
+  font-size: 8px;
+  letter-spacing: 0.7px;
+}
+
+.draggable-titlebar button {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #374249;
+  border-radius: 3px;
+  background: #1a2125;
+  color: #89969c;
+  cursor: pointer;
+}
+
+.map-editor-window {
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  z-index: 14;
+  width: 310px;
+  max-height: calc(100% - 70px);
+  border: 1px solid rgba(70,190,255,0.42);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(17,22,25,0.97);
+  box-shadow: 0 16px 38px rgba(0,0,0,0.42);
+  backdrop-filter: blur(10px);
+}
+
+.floating-area-manager {
+  max-height: calc(100vh - 170px);
+  overflow-y: auto;
+  border-bottom: 0;
+}
+
+.plot-detail-card.draggable-window {
+  padding-top: 42px;
+}
+
+.detail-dragbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.detail-close {
+  top: 38px;
+}
+
+
+/* ==========================================================
+   APP CSS 015
+   v10 — selected plot label
+   ========================================================== */
+
+.plotmap-map-panel {
+  isolation: isolate;
+}
+
+
+/* ==========================================================
+   APP CSS 016
+   v12 — Zone browser
+   ========================================================== */
+
+.zone-browser-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.zone-browser-row label {
+  color: #75838a;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+.zone-browser-row select {
+  width: 100%;
+  min-width: 0;
+  height: 29px;
+  padding: 0 7px;
+  border: 1px solid #354147;
+  border-radius: 4px;
+  outline: 0;
+  background: #101619;
+  color: #e5ecef;
+  font-size: 9px;
+}
+
+.zone-browser-row select:focus {
+  border-color: var(--pm-blue);
+}
+
+
+/* ==========================================================
+   APP CSS 017
+   v12 — Person-first Plot Details
+   ========================================================== */
+
+.plot-detail-card {
+  width: 340px;
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
+}
+
+.plot-detail-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin: 2px 0 10px;
+  padding: 2px;
+  border: 1px solid #2e383d;
+  border-radius: 5px;
+  background: #101518;
+}
+
+.plot-detail-tabs button {
+  height: 27px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #7f8d94;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+.plot-detail-tabs button.active {
+  background: #273138;
+  color: #e8f3f7;
+}
+
+.person-info-panel,
+.settings-panel {
+  min-width: 0;
+}
+
+.person-summary {
+  padding: 9px 0 10px;
+  border-bottom: 1px solid #2a3338;
+}
+
+.person-summary > span {
+  color: #72828a;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+.person-summary h2 {
+  margin: 4px 0 2px;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.person-summary small {
+  color: #94a0a6;
+  font-size: 9px;
+}
+
+.empty-person {
+  padding: 12px 9px;
+  border: 1px dashed #38444a;
+  border-radius: 5px;
+  background: #111719;
+}
+
+.empty-person strong,
+.empty-person span {
+  display: block;
+}
+
+.empty-person strong {
+  font-size: 10px;
+}
+
+.empty-person span {
+  margin-top: 3px;
+  color: #7c8a91;
+  font-size: 8px;
+}
+
+.person-edit-form {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.person-edit-form label {
+  color: #78858c;
+  font-size: 8px;
+}
+
+.person-edit-form input,
+.person-edit-form select,
+.person-edit-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #354147;
+  border-radius: 4px;
+  outline: 0;
+  background: #101619;
+  color: #e5ecef;
+  font-size: 9px;
+}
+
+.person-edit-form input,
+.person-edit-form select {
+  height: 28px;
+  padding: 0 7px;
+}
+
+.person-edit-form textarea {
+  min-height: 48px;
+  padding: 6px 7px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.person-edit-form input:focus,
+.person-edit-form select:focus,
+.person-edit-form textarea:focus {
+  border-color: var(--pm-blue);
+}
+
+.person-name-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.person-name-grid > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.person-readonly {
+  margin-top: 9px !important;
+}
+
+.edit-mode-hint {
+  margin: 10px 0 0;
+  color: #77868d;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+.settings-panel > h2 {
+  margin-top: 8px;
 }
