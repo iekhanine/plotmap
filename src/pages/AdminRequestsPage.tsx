@@ -5,10 +5,16 @@ import {
 } from "react";
 
 import {
+  AtSign,
+  Clock3,
+  Mail,
   RefreshCw,
+  Save,
+  UserRound,
 } from "lucide-react";
 
 import AdminShell from "../components/AdminShell";
+
 import {
   useAuth,
 } from "../context/AuthContext";
@@ -24,24 +30,143 @@ import type {
 } from "../types/admin";
 
 
-export default function AdminRequestsPage() {
-  const { user } = useAuth();
+function receivedLabel(
+  value: string
+) {
+  const date =
+    new Date(
+      value
+    );
 
-  const [rows, setRows] = useState<PublicCorrectionRecord[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<CorrectionStatus | "all">("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editStatus, setEditStatus] = useState<CorrectionStatus>("pending");
-  const [resolutionNotes, setResolutionNotes] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const today =
+    new Date();
+
+  if (
+    date.toDateString() ===
+    today.toDateString()
+  ) {
+    return date.toLocaleTimeString(
+      [],
+      {
+        hour:
+          "numeric",
+        minute:
+          "2-digit",
+      }
+    );
+  }
+
+  return date.toLocaleDateString(
+    [],
+    {
+      month:
+        "short",
+      day:
+        "numeric",
+    }
+  );
+}
+
+
+export default function AdminRequestsPage() {
+  const {
+    user,
+  } = useAuth();
+
+  const [
+    rows,
+    setRows,
+  ] =
+    useState<PublicCorrectionRecord[]>(
+      []
+    );
+
+  const [
+    search,
+    setSearch,
+  ] =
+    useState("");
+
+  const [
+    status,
+    setStatus,
+  ] =
+    useState<
+      CorrectionStatus |
+      "all"
+    >(
+      "all"
+    );
+
+  const [
+    selectedId,
+    setSelectedId,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const [
+    editStatus,
+    setEditStatus,
+  ] =
+    useState<CorrectionStatus>(
+      "pending"
+    );
+
+  const [
+    resolutionNotes,
+    setResolutionNotes,
+  ] =
+    useState("");
+
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(false);
+
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const [
+    success,
+    setSuccess,
+  ] =
+    useState<string | null>(
+      null
+    );
+
 
   async function reload() {
     try {
-      setError(null);
-      setRows(await loadPublicCorrections());
-    } catch (loadError) {
+      setError(
+        null
+      );
+
+      const next =
+        await loadPublicCorrections();
+
+      setRows(
+        next
+      );
+
+      if (
+        next.length &&
+        !selectedId
+      ) {
+        open(
+          next[0]
+        );
+      }
+    } catch (
+      loadError
+    ) {
       setError(
         loadError instanceof Error
           ? loadError.message
@@ -50,45 +175,89 @@ export default function AdminRequestsPage() {
     }
   }
 
+
   useEffect(() => {
     void reload();
   }, []);
 
-  const filtered = useMemo(() => {
-    const needle = search.trim().toLowerCase();
 
-    return rows.filter((row) => {
-      if (status !== "all" && row.status !== status) {
-        return false;
-      }
+  const filtered =
+    useMemo(() => {
+      const needle =
+        search
+          .trim()
+          .toLowerCase();
 
-      if (!needle) {
-        return true;
-      }
+      return rows.filter(
+        (row) => {
+          if (
+            status !== "all" &&
+            row.status !==
+              status
+          ) {
+            return false;
+          }
 
-      return [
-        row.personName,
-        row.plotLabel,
-        row.requester_name,
-        row.requester_email,
-        row.relationship,
-        row.message,
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(needle);
-    });
-  }, [rows, search, status]);
+          if (!needle) {
+            return true;
+          }
 
-  const selected = rows.find((row) => row.id === selectedId) || null;
+          return [
+            row.personName,
+            row.plotLabel,
+            row.requester_name,
+            row.requester_email,
+            row.relationship,
+            row.message,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(
+              needle
+            );
+        }
+      );
+    }, [
+      rows,
+      search,
+      status,
+    ]);
 
-  function open(row: PublicCorrectionRecord) {
-    setSelectedId(row.id);
-    setEditStatus(row.status);
-    setResolutionNotes(row.resolution_notes || "");
-    setSuccess(null);
-    setError(null);
+
+  const selected =
+    rows.find(
+      (row) =>
+        row.id ===
+        selectedId
+    ) ||
+    null;
+
+
+  function open(
+    row: PublicCorrectionRecord
+  ) {
+    setSelectedId(
+      row.id
+    );
+
+    setEditStatus(
+      row.status
+    );
+
+    setResolutionNotes(
+      row.resolution_notes ||
+      ""
+    );
+
+    setSuccess(
+      null
+    );
+
+    setError(
+      null
+    );
   }
+
 
   async function save() {
     if (!selected) {
@@ -96,178 +265,384 @@ export default function AdminRequestsPage() {
     }
 
     try {
-      setBusy(true);
-      setError(null);
-      setSuccess(null);
+      setBusy(
+        true
+      );
+
+      setError(
+        null
+      );
+
+      setSuccess(
+        null
+      );
 
       await updatePublicCorrection({
-        id: selected.id,
-        status: editStatus,
+        id:
+          selected.id,
+        status:
+          editStatus,
         resolutionNotes,
-        userId: user?.id || null,
+        userId:
+          user?.id ||
+          null,
       });
 
-      setSuccess("Family request updated.");
+      setSuccess(
+        "Family request updated."
+      );
+
       await reload();
-    } catch (saveError) {
+    } catch (
+      saveError
+    ) {
       setError(
         saveError instanceof Error
           ? saveError.message
           : "Could not update request."
       );
     } finally {
-      setBusy(false);
+      setBusy(
+        false
+      );
     }
   }
+
 
   return (
     <AdminShell
       eyebrow="PUBLIC INTAKE"
       title="Family Requests"
-      description="Visitors may suggest a correction; nothing is changed automatically. Staff review, contact the family if needed, then update the official record separately."
+      description="Review visitor-submitted corrections like an inbox. Requests never modify the official record automatically."
       actions={
         <button
           type="button"
           className="admin-button-secondary-v15"
-          onClick={() => void reload()}
+          onClick={() =>
+            void reload()
+          }
         >
-          <RefreshCw size={13} /> Refresh
+          <RefreshCw
+            size={13}
+          />
+          Refresh
         </button>
       }
     >
-      {error && <div className="admin-message-v15 error">{error}</div>}
-      {success && <div className="admin-message-v15 success">{success}</div>}
+      {error && (
+        <div className="admin-message-v15 error">
+          {error}
+        </div>
+      )}
 
-      <div className="admin-grid-2-v15" style={{ alignItems: "start" }}>
-        <section className="admin-card-v15 admin-card-pad-v15">
-          <div className="admin-filter-row-v15">
+      {success && (
+        <div className="admin-message-v15 success">
+          {success}
+        </div>
+      )}
+
+      <section className="family-inbox-v18">
+        <div className="family-inbox-toolbar-v18">
+          <div className="family-inbox-search-v18">
+            <Mail
+              size={14}
+            />
+
             <input
               type="search"
               placeholder="Search person, requester, plot…"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              style={{ flex: 1 }}
+              value={
+                search
+              }
+              onChange={(
+                event
+              ) =>
+                setSearch(
+                  event.target.value
+                )
+              }
             />
-            <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value as any)}
-            >
-              <option value="all">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="reviewing">Reviewing</option>
-              <option value="resolved">Resolved</option>
-              <option value="rejected">Rejected</option>
-            </select>
           </div>
 
-          <table className="admin-table-v15">
-            <thead>
-              <tr>
-                <th>Record</th>
-                <th>Requester</th>
-                <th>Status</th>
-                <th>Received</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row) => (
-                <tr
-                  key={row.id}
-                  onClick={() => open(row)}
-                  style={{ cursor: "pointer", background: selectedId === row.id ? "#f2f8fb" : undefined }}
+          <select
+            value={
+              status
+            }
+            onChange={(
+              event
+            ) =>
+              setStatus(
+                event.target.value as
+                  CorrectionStatus |
+                  "all"
+              )
+            }
+          >
+            <option value="all">
+              All statuses
+            </option>
+            <option value="pending">
+              Pending
+            </option>
+            <option value="reviewing">
+              Reviewing
+            </option>
+            <option value="resolved">
+              Resolved
+            </option>
+            <option value="rejected">
+              Rejected
+            </option>
+          </select>
+        </div>
+
+        <div className="family-inbox-layout-v18">
+          <aside className="family-inbox-list-v18">
+            <div className="family-inbox-list-heading-v18">
+              <strong>
+                Requests
+              </strong>
+              <span>
+                {filtered.length}
+              </span>
+            </div>
+
+            {filtered.map(
+              (row) => (
+                <button
+                  key={
+                    row.id
+                  }
+                  type="button"
+                  className={
+                    row.id ===
+                    selectedId
+                      ? "family-mail-row-v18 selected"
+                      : "family-mail-row-v18"
+                  }
+                  onClick={() =>
+                    open(
+                      row
+                    )
+                  }
                 >
-                  <td>
-                    <strong>{row.personName}</strong><br />
-                    <small>{row.plotLabel}</small>
-                  </td>
-                  <td>
-                    {row.requester_name}<br />
-                    <small>{row.requester_email}</small>
-                  </td>
-                  <td>
-                    <span className={`admin-tag-v15 ${row.status}`}>
+                  <div className="family-mail-row-top-v18">
+                    <strong>
+                      {row.personName ||
+                        "Unknown record"}
+                    </strong>
+
+                    <time>
+                      {receivedLabel(
+                        row.created_at
+                      )}
+                    </time>
+                  </div>
+
+                  <div className="family-mail-row-meta-v18">
+                    <span>
+                      {row.requester_name}
+                    </span>
+
+                    <span
+                      className={`admin-tag-v15 ${row.status}`}
+                    >
                       {row.status}
                     </span>
-                  </td>
-                  <td>{new Date(row.created_at).toLocaleDateString()}</td>
-                </tr>
-              ))}
+                  </div>
 
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={4}>No requests match this filter.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </section>
+                  <p>
+                    {row.message}
+                  </p>
 
-        <section className="admin-card-v15 admin-card-pad-v15">
-          {selected ? (
-            <div className="admin-form-v15">
-              <div>
-                <span className="admin-eyebrow-v15">RECORD</span>
-                <h3>{selected.personName}</h3>
-                <p className="admin-note-v15">{selected.plotLabel}</p>
-              </div>
-
-              <div className="admin-grid-2-v15">
-                <div>
-                  <span className="admin-eyebrow-v15">REQUESTER</span>
-                  <p>{selected.requester_name}<br />{selected.requester_email}</p>
-                </div>
-                <div>
-                  <span className="admin-eyebrow-v15">RELATIONSHIP</span>
-                  <p>{selected.relationship || "Not provided"}</p>
-                </div>
-              </div>
-
-              <div>
-                <span className="admin-eyebrow-v15">MESSAGE</span>
-                <p className="admin-note-v15">{selected.message}</p>
-              </div>
-
-              <label>
-                Status
-                <select
-                  value={editStatus}
-                  onChange={(event) => setEditStatus(event.target.value as CorrectionStatus)}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="reviewing">Reviewing</option>
-                  <option value="resolved">Resolved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-              </label>
-
-              <label>
-                Staff resolution notes
-                <textarea
-                  rows={5}
-                  value={resolutionNotes}
-                  onChange={(event) => setResolutionNotes(event.target.value)}
-                  placeholder="What was verified, corrected, or why was the request rejected?"
-                />
-              </label>
-
-              <div className="admin-actions-row-v15">
-                <button
-                  type="button"
-                  className="admin-button-primary-v15"
-                  disabled={busy}
-                  onClick={() => void save()}
-                >
-                  {busy ? "Saving…" : "Save Request"}
+                  <small>
+                    {row.plotLabel}
+                  </small>
                 </button>
+              )
+            )}
+
+            {filtered.length ===
+              0 && (
+              <div className="family-inbox-empty-v18">
+                No requests match this filter.
               </div>
-            </div>
-          ) : (
-            <div className="admin-note-v15">
-              Select a family request on the left to review the submitted information.
-            </div>
-          )}
-        </section>
-      </div>
+            )}
+          </aside>
+
+          <article className="family-inbox-reader-v18">
+            {!selected && (
+              <div className="family-inbox-reader-empty-v18">
+                <Mail
+                  size={28}
+                />
+                <strong>
+                  Select a request
+                </strong>
+                <span>
+                  The request details will appear here.
+                </span>
+              </div>
+            )}
+
+            {selected && (
+              <>
+                <header className="family-reader-header-v18">
+                  <div>
+                    <span className="admin-eyebrow-v15">
+                      REQUESTED RECORD
+                    </span>
+
+                    <h2>
+                      {selected.personName}
+                    </h2>
+
+                    <p>
+                      {selected.plotLabel}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`admin-tag-v15 ${selected.status}`}
+                  >
+                    {selected.status}
+                  </span>
+                </header>
+
+                <div className="family-reader-sender-v18">
+                  <div className="family-reader-avatar-v18">
+                    <UserRound
+                      size={17}
+                    />
+                  </div>
+
+                  <div>
+                    <strong>
+                      {selected.requester_name}
+                    </strong>
+
+                    <span>
+                      <AtSign
+                        size={11}
+                      />
+                      {selected.requester_email}
+                    </span>
+                  </div>
+
+                  <div className="family-reader-time-v18">
+                    <Clock3
+                      size={11}
+                    />
+                    {new Date(
+                      selected.created_at
+                    ).toLocaleString()}
+                  </div>
+                </div>
+
+                <div className="family-reader-metadata-v18">
+                  <div>
+                    <span>
+                      Relationship
+                    </span>
+                    <strong>
+                      {selected.relationship ||
+                        "Not provided"}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>
+                      Plot
+                    </span>
+                    <strong>
+                      {selected.plotLabel}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="family-reader-message-v18">
+                  <span className="admin-eyebrow-v15">
+                    MESSAGE
+                  </span>
+
+                  <p>
+                    {selected.message}
+                  </p>
+                </div>
+
+                <div className="family-reader-review-v18">
+                  <label>
+                    Status
+                    <select
+                      value={
+                        editStatus
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setEditStatus(
+                          event.target.value as CorrectionStatus
+                        )
+                      }
+                    >
+                      <option value="pending">
+                        Pending
+                      </option>
+                      <option value="reviewing">
+                        Reviewing
+                      </option>
+                      <option value="resolved">
+                        Resolved
+                      </option>
+                      <option value="rejected">
+                        Rejected
+                      </option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Staff resolution notes
+                    <textarea
+                      rows={5}
+                      value={
+                        resolutionNotes
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setResolutionNotes(
+                          event.target.value
+                        )
+                      }
+                      placeholder="What was verified, corrected, or why was the request rejected?"
+                    />
+                  </label>
+
+                  <div className="family-reader-actions-v18">
+                    <button
+                      type="button"
+                      className="admin-button-primary-v15"
+                      disabled={
+                        busy
+                      }
+                      onClick={() =>
+                        void save()
+                      }
+                    >
+                      <Save
+                        size={13}
+                      />
+                      {busy
+                        ? "Saving…"
+                        : "Save Request"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </article>
+        </div>
+      </section>
     </AdminShell>
   );
 }

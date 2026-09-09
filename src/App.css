@@ -146,6 +146,7 @@ button:disabled {
 }
 
 .plotmap-sidebar {
+  position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1662,4 +1663,259 @@ button:disabled {
   color: #7f8d94;
   font-size: 8px;
   line-height: 1.45;
+}
+
+
+/* ==========================================================
+   APP CSS V18
+   Resizable staff sidebar
+   ========================================================== */
+
+.plotmap-sidebar-resizer-v18 {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  z-index: 40;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.plotmap-sidebar-resizer-v18::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: 1px;
+  height: 100%;
+  background: transparent;
+  transition: background .12s ease;
+}
+
+.plotmap-sidebar-resizer-v18:hover::after {
+  background: var(--pm-blue);
+}
+
+
+/* ==========================================================
+   APP CSS V18.1
+   Single plot deletion
+   ========================================================== */
+
+.single-plot-delete-v181 {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(188, 202, 210, .22);
+}
+
+.single-plot-delete-button-v181,
+.single-plot-delete-confirm-button-v181 {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #a94646;
+  border-radius: 5px;
+  background: rgba(116, 28, 28, .12);
+  color: #e6a4a4;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.single-plot-delete-button-v181:hover,
+.single-plot-delete-confirm-button-v181:hover {
+  background: rgba(146, 34, 34, .22);
+  border-color: #c85a5a;
+  color: #ffd0d0;
+}
+
+.single-plot-delete-button-v181:disabled,
+.single-plot-delete-confirm-button-v181:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.single-plot-delete-confirm-v181 {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #824242;
+  border-radius: 6px;
+  background: rgba(85, 25, 25, .16);
+}
+
+.single-plot-delete-confirm-v181 > strong {
+  color: #f0b7b7;
+  font-size: 10px;
+}
+
+.single-plot-delete-confirm-v181 > span {
+  color: #bd9f9f;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.single-plot-delete-confirm-v181 > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.single-plot-delete-confirm-v181 .secondary-action,
+.single-plot-delete-confirm-v181 .single-plot-delete-confirm-button-v181 {
+  min-height: 32px;
+}
+
+
+/* ==========================================================
+   APP CSS V18.2
+   Zone delete + toggleable map tools
+   ========================================================== */
+
+.area-action-grid button.active-tool-v182 {
+  border-color: #46beff;
+  background: rgba(70, 190, 255, .14);
+  color: #bdeaff;
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(70, 190, 255, .12);
+}
+
+.delete-zone-button-v182 {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #824545;
+  border-radius: 5px;
+  background: rgba(100, 28, 28, .12);
+  color: #dca0a0;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.delete-zone-button-v182:hover:not(:disabled) {
+  border-color: #b45a5a;
+  background: rgba(145, 35, 35, .20);
+  color: #ffd0d0;
+}
+
+.delete-zone-button-v182:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+
+/* ==========================================================
+   APP CSS V18.5
+   One clean map-control row
+   ========================================================== */
+
+/*
+ * Top-left order:
+ *
+ * [ + ][ − ]   [ Zone ]   [ Editor / saved-status message ]
+ *
+ * OpenLayers owns the zoom control, while PlotMap owns the
+ * Zone and status controls. They now share the same visual row.
+ */
+
+.plotmap-map-panel .ol-zoom {
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.plotmap-map-panel .ol-zoom button {
+  width: 29px;
+  height: 29px;
+  margin: 0;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 4px;
+  background: rgba(16,20,23,0.92);
+  color: #e3e9eb;
+  font-size: 17px;
+  line-height: 27px;
+}
+
+.plotmap-map-panel .ol-zoom button:hover,
+.plotmap-map-panel .ol-zoom button:focus {
+  background: rgba(27,34,38,0.96);
+}
+
+.map-top-controls-v185 {
+  position: absolute;
+  top: 10px;
+  left: 78px;
+  right: 10px;
+  z-index: 10;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.map-top-controls-v185 .map-toolbar,
+.map-top-controls-v185 .map-editor-status {
+  position: static;
+  top: auto;
+  left: auto;
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+
+.map-top-controls-v185 .map-toolbar {
+  min-width: 0;
+}
+
+.map-top-controls-v185 .map-toolbar button {
+  max-width: min(320px, 38vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-top-controls-v185 .map-editor-status {
+  max-width: min(620px, 55vw);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * The Map Editor starts below the unified control row so it
+ * cannot sit directly on top of the zoom / Zone / status row
+ * when its position is reset.
+ */
+.map-editor-window {
+  top: 52px;
+}
+
+@media (max-width: 900px) {
+  .map-top-controls-v185 {
+    right: 6px;
+    gap: 4px;
+  }
+
+  .map-top-controls-v185 .map-toolbar button {
+    max-width: 34vw;
+  }
+
+  .map-top-controls-v185 .map-editor-status {
+    max-width: 42vw;
+  }
 }

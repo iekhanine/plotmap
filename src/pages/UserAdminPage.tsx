@@ -25,6 +25,7 @@ import {
   createManagedUser,
   deleteManagedUser,
   listManagedUsers,
+  updateManagedIdentity,
   updateManagedUser,
   type ManagedUser,
 } from "../services/userAdmin";
@@ -51,6 +52,12 @@ function roleLabel(
     role === "recovery_owner"
   ) {
     return "Recovery Owner";
+  }
+
+  if (
+    role === "platform_recovery"
+  ) {
+    return "Platform Recovery";
   }
 
   return role
@@ -149,7 +156,9 @@ export default function UserAdminPage() {
     role,
     setRole,
   ] = useState<
-    "manager" | "user"
+    | "recovery_owner"
+    | "manager"
+    | "user"
   >(
     "user"
   );
@@ -205,6 +214,22 @@ export default function UserAdminPage() {
   ] = useState(false);
 
 
+  const [
+    identityDisplayName,
+    setIdentityDisplayName,
+  ] = useState("");
+
+  const [
+    identityEmail,
+    setIdentityEmail,
+  ] = useState("");
+
+  const [
+    identityPassword,
+    setIdentityPassword,
+  ] = useState("");
+
+
   async function reload() {
     try {
       setLoading(
@@ -251,6 +276,18 @@ export default function UserAdminPage() {
     );
 
 
+  const platformRecovery =
+    useMemo(
+      () =>
+        users.find(
+          (user) =>
+            user.role ===
+            "platform_recovery"
+        ) || null,
+      [users]
+    );
+
+
   const stats =
     useMemo(() => {
       return {
@@ -260,7 +297,8 @@ export default function UserAdminPage() {
           users.filter(
             (user) =>
               user.role === "owner" ||
-              user.role === "recovery_owner"
+              user.role === "recovery_owner" ||
+              user.role === "platform_recovery"
           ).length,
         managers:
           users.filter(
@@ -292,8 +330,9 @@ export default function UserAdminPage() {
         Record<ManagedUser["role"], number> = {
           owner: 0,
           recovery_owner: 1,
-          manager: 2,
-          user: 3,
+          platform_recovery: 2,
+          manager: 3,
+          user: 4,
         };
 
       return users
@@ -302,7 +341,8 @@ export default function UserAdminPage() {
             if (
               roleFilter === "owner" &&
               user.role !== "owner" &&
-              user.role !== "recovery_owner"
+              user.role !== "recovery_owner" &&
+              user.role !== "platform_recovery"
             ) {
               return false;
             }
@@ -460,9 +500,10 @@ export default function UserAdminPage() {
   ) {
     if (
       user.role === "owner" ||
-      user.role === "recovery_owner"
+      user.role === "recovery_owner" ||
+      user.role === "platform_recovery"
     ) {
-      return false;
+      return isOwner;
     }
 
     if (
@@ -504,12 +545,100 @@ export default function UserAdminPage() {
       user.canEditPlotNames
     );
 
+    setIdentityDisplayName(
+      user.displayName ||
+      ""
+    );
+
+    setIdentityEmail(
+      user.email
+    );
+
+    setIdentityPassword(
+      ""
+    );
+
     setError(
       null
     );
     setSuccess(
       null
     );
+  }
+
+
+  async function saveProtectedIdentity(
+    user: ManagedUser
+  ) {
+    if (
+      identityPassword &&
+      identityPassword.length <
+        10
+    ) {
+      setError(
+        "New password must be at least 10 characters."
+      );
+      return;
+    }
+
+    try {
+      setBusyId(
+        user.memberId
+      );
+      setError(
+        null
+      );
+      setSuccess(
+        null
+      );
+
+      await updateManagedIdentity({
+        memberId:
+          user.memberId,
+        displayName:
+          identityDisplayName.trim(),
+        email:
+          user.role ===
+            "platform_recovery"
+            ? undefined
+            : identityEmail.trim(),
+        password:
+          user.role ===
+            "platform_recovery" ||
+          !identityPassword
+            ? undefined
+            : identityPassword,
+      });
+
+      setEditingId(
+        null
+      );
+
+      setIdentityPassword(
+        ""
+      );
+
+      setSuccess(
+        user.role ===
+          "platform_recovery"
+          ? "Platform recovery display name updated."
+          : "Owner identity updated. If you changed your own sign-in credentials, use the new credentials the next time you sign in."
+      );
+
+      await reload();
+    } catch (
+      saveError
+    ) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not update protected account."
+      );
+    } finally {
+      setBusyId(
+        null
+      );
+    }
   }
 
 
@@ -620,7 +749,7 @@ export default function UserAdminPage() {
     <AdminShell
       eyebrow="ACCESS CONTROL"
       title="Accounts & Permissions"
-      description="Create Managers and Users, keep the Recovery Owner protected, and grant the narrowest access each staff member needs."
+      description="Manage client Owners, Recovery Owners, Managers and Users while keeping the OneTime Labs platform recovery account protected."
     >
       <div className="user-admin-main v15-embedded">
         <section className="user-admin-intro-row">
@@ -665,21 +794,41 @@ export default function UserAdminPage() {
         </section>
 
         {isOwner && (
-          <section className="recovery-owner-card">
-            <ShieldCheck
-              size={18}
-            />
+          <section className="special-account-strip-v18">
+            <div className="recovery-owner-card">
+              <ShieldCheck
+                size={18}
+              />
 
-            <div>
-              <strong>
-                Recovery Owner
-              </strong>
+              <div>
+                <strong>
+                  Client Recovery Owner
+                </strong>
 
-              <span>
-                {recoveryOwner
-                  ? `${recoveryOwner.email} · configured and protected`
-                  : "Not configured — run the installer bootstrap before delivery."}
-              </span>
+                <span>
+                  {recoveryOwner
+                    ? `${recoveryOwner.email} · email and password can be changed`
+                    : "Not configured — create a Recovery Owner account below if the organization wants one."}
+                </span>
+              </div>
+            </div>
+
+            <div className="recovery-owner-card platform">
+              <ShieldCheck
+                size={18}
+              />
+
+              <div>
+                <strong>
+                  OneTime Labs Platform Recovery
+                </strong>
+
+                <span>
+                  {platformRecovery
+                    ? `${platformRecovery.email} · protected break-glass account`
+                    : "Platform recovery account not detected."}
+                </span>
+              </div>
             </div>
           </section>
         )}
@@ -836,6 +985,7 @@ export default function UserAdminPage() {
                       (event) => {
                         const nextRole =
                           event.target.value as
+                            | "recovery_owner"
                             | "manager"
                             | "user";
 
@@ -859,12 +1009,17 @@ export default function UserAdminPage() {
                     <option value="manager">
                       Manager — operational editor
                     </option>
+                    {!recoveryOwner && (
+                      <option value="recovery_owner">
+                        Recovery Owner — protected client recovery
+                      </option>
+                    )}
                   </select>
                 </label>
               )}
             </div>
 
-            {(role === "user" ||
+            {((role === "user") ||
               !isOwner) && (
               <label className="permission-checkbox wide">
                 <input
@@ -1056,9 +1211,11 @@ export default function UserAdminPage() {
                     user.memberId;
 
                   const accessLabel =
-                    user.role === "owner" ||
-                    user.role === "recovery_owner"
-                      ? "Full owner access"
+                    user.role === "platform_recovery"
+                      ? "Protected platform recovery"
+                      : user.role === "owner" ||
+                        user.role === "recovery_owner"
+                        ? "Full owner access"
                       : user.role === "manager"
                         ? "Full operational access"
                         : user.canEditPlotNames
@@ -1168,159 +1325,272 @@ export default function UserAdminPage() {
 
                       {editing && (
                         <div className="account-editor">
-                          <div className="account-editor-copy">
-                            <strong>
-                              Account Settings
-                            </strong>
-                            <span>
-                              Change this account's role, status, or narrow User permissions.
-                            </span>
-                          </div>
-
-                          <div className="account-editor-fields">
-                            {isOwner && (
-                              <label>
+                          {(
+                            user.role === "owner" ||
+                            user.role === "recovery_owner" ||
+                            user.role === "platform_recovery"
+                          ) ? (
+                            <>
+                              <div className="account-editor-copy">
+                                <strong>
+                                  Protected Identity
+                                </strong>
                                 <span>
-                                  Role
+                                  {user.role === "platform_recovery"
+                                    ? "Only the display name may be changed. The OneTime Labs recovery email and password are immutable in PlotMap."
+                                    : "Owner and client Recovery Owner email/password credentials may be changed here."}
                                 </span>
-                                <select
-                                  value={
-                                    editRole
-                                  }
-                                  onChange={
-                                    (event) => {
-                                      const nextRole =
-                                        event.target.value as
-                                          | "manager"
-                                          | "user";
+                              </div>
 
-                                      setEditRole(
-                                        nextRole
-                                      );
-
-                                      if (
-                                        nextRole === "manager"
-                                      ) {
-                                        setEditCanEditPlotNames(
-                                          false
-                                        );
-                                      }
+                              <div className="account-editor-fields identity-fields-v18">
+                                <label>
+                                  <span>
+                                    Display name
+                                  </span>
+                                  <input
+                                    value={identityDisplayName}
+                                    onChange={(event) =>
+                                      setIdentityDisplayName(
+                                        event.target.value
+                                      )
                                     }
+                                  />
+                                </label>
+
+                                <label>
+                                  <span>
+                                    Email
+                                  </span>
+                                  <input
+                                    type="email"
+                                    disabled={
+                                      user.role === "platform_recovery"
+                                    }
+                                    value={
+                                      user.role === "platform_recovery"
+                                        ? user.email
+                                        : identityEmail
+                                    }
+                                    onChange={(event) =>
+                                      setIdentityEmail(
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+                                </label>
+
+                                <label>
+                                  <span>
+                                    New password
+                                  </span>
+                                  <input
+                                    type="password"
+                                    disabled={
+                                      user.role === "platform_recovery"
+                                    }
+                                    value={identityPassword}
+                                    placeholder={
+                                      user.role === "platform_recovery"
+                                        ? "Protected"
+                                        : "Leave blank to keep current password"
+                                    }
+                                    onChange={(event) =>
+                                      setIdentityPassword(
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+                                </label>
+                              </div>
+
+                              <div className="account-editor-actions">
+                                <span className="protected-account-note-v18">
+                                  {user.role === "platform_recovery"
+                                    ? "Email, password, role, status and deletion are locked."
+                                    : "Role, active status and deletion remain protected."}
+                                </span>
+
+                                <div>
+                                  <button
+                                    type="button"
+                                    className="admin-secondary"
+                                    onClick={() =>
+                                      setEditingId(
+                                        null
+                                      )
+                                    }
+                                  >
+                                    Cancel
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="admin-primary compact-button"
+                                    disabled={
+                                      busyId === user.memberId
+                                    }
+                                    onClick={() =>
+                                      void saveProtectedIdentity(
+                                        user
+                                      )
+                                    }
+                                  >
+                                    {busyId === user.memberId
+                                      ? "Saving…"
+                                      : "Save Identity"}
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="account-editor-copy">
+                                <strong>
+                                  Account Settings
+                                </strong>
+                                <span>
+                                  Change this account's role, status, or narrow User permissions.
+                                </span>
+                              </div>
+
+                              <div className="account-editor-fields">
+                                {isOwner && (
+                                  <label>
+                                    <span>
+                                      Role
+                                    </span>
+                                    <select
+                                      value={editRole}
+                                      onChange={(event) => {
+                                        const nextRole =
+                                          event.target.value as
+                                            | "manager"
+                                            | "user";
+
+                                        setEditRole(
+                                          nextRole
+                                        );
+
+                                        if (
+                                          nextRole === "manager"
+                                        ) {
+                                          setEditCanEditPlotNames(
+                                            false
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      <option value="user">
+                                        User
+                                      </option>
+                                      <option value="manager">
+                                        Manager
+                                      </option>
+                                    </select>
+                                  </label>
+                                )}
+
+                                <label>
+                                  <span>
+                                    Account status
+                                  </span>
+                                  <select
+                                    value={
+                                      editActive
+                                        ? "active"
+                                        : "inactive"
+                                    }
+                                    onChange={(event) =>
+                                      setEditActive(
+                                        event.target.value === "active"
+                                      )
+                                    }
+                                  >
+                                    <option value="active">
+                                      Active
+                                    </option>
+                                    <option value="inactive">
+                                      Inactive
+                                    </option>
+                                  </select>
+                                </label>
+
+                                {editRole === "user" && (
+                                  <label className="permission-checkbox inline-edit">
+                                    <input
+                                      type="checkbox"
+                                      checked={editCanEditPlotNames}
+                                      onChange={(event) =>
+                                        setEditCanEditPlotNames(
+                                          event.target.checked
+                                        )
+                                      }
+                                    />
+
+                                    <span>
+                                      <strong>
+                                        Can edit plot names
+                                      </strong>
+                                      <small>
+                                        Plot Number / ID and Display Name only.
+                                      </small>
+                                    </span>
+                                  </label>
+                                )}
+                              </div>
+
+                              <div className="account-editor-actions">
+                                <button
+                                  type="button"
+                                  className="admin-danger"
+                                  disabled={
+                                    busyId === user.memberId
+                                  }
+                                  onClick={() =>
+                                    void removeUser(
+                                      user
+                                    )
                                   }
                                 >
-                                  <option value="user">
-                                    User
-                                  </option>
-                                  <option value="manager">
-                                    Manager
-                                  </option>
-                                </select>
-                              </label>
-                            )}
+                                  <Trash2
+                                    size={12}
+                                  />
+                                  Delete Account
+                                </button>
 
-                            <label>
-                              <span>
-                                Account status
-                              </span>
-                              <select
-                                value={
-                                  editActive
-                                    ? "active"
-                                    : "inactive"
-                                }
-                                onChange={
-                                  (event) =>
-                                    setEditActive(
-                                      event.target.value === "active"
-                                    )
-                                }
-                              >
-                                <option value="active">
-                                  Active
-                                </option>
-                                <option value="inactive">
-                                  Inactive
-                                </option>
-                              </select>
-                            </label>
-
-                            {editRole === "user" && (
-                              <label className="permission-checkbox inline-edit">
-                                <input
-                                  type="checkbox"
-                                  checked={
-                                    editCanEditPlotNames
-                                  }
-                                  onChange={
-                                    (event) =>
-                                      setEditCanEditPlotNames(
-                                        event.target.checked
+                                <div>
+                                  <button
+                                    type="button"
+                                    className="admin-secondary"
+                                    onClick={() =>
+                                      setEditingId(
+                                        null
                                       )
-                                  }
-                                />
+                                    }
+                                  >
+                                    Cancel
+                                  </button>
 
-                                <span>
-                                  <strong>
-                                    Can edit plot names
-                                  </strong>
-                                  <small>
-                                    Plot Number / ID and Display Name only.
-                                  </small>
-                                </span>
-                              </label>
-                            )}
-                          </div>
-
-                          <div className="account-editor-actions">
-                            <button
-                              type="button"
-                              className="admin-danger"
-                              disabled={
-                                busyId === user.memberId
-                              }
-                              onClick={() =>
-                                void removeUser(
-                                  user
-                                )
-                              }
-                            >
-                              <Trash2
-                                size={12}
-                              />
-                              Delete Account
-                            </button>
-
-                            <div>
-                              <button
-                                type="button"
-                                className="admin-secondary"
-                                onClick={() =>
-                                  setEditingId(
-                                    null
-                                  )
-                                }
-                              >
-                                Cancel
-                              </button>
-
-                              <button
-                                type="button"
-                                className="admin-primary compact-button"
-                                disabled={
-                                  busyId === user.memberId
-                                }
-                                onClick={() =>
-                                  void saveEditedUser(
-                                    user
-                                  )
-                                }
-                              >
-                                {busyId === user.memberId
-                                  ? "Saving…"
-                                  : "Save Changes"}
-                              </button>
-                            </div>
-                          </div>
+                                  <button
+                                    type="button"
+                                    className="admin-primary compact-button"
+                                    disabled={
+                                      busyId === user.memberId
+                                    }
+                                    onClick={() =>
+                                      void saveEditedUser(
+                                        user
+                                      )
+                                    }
+                                  >
+                                    {busyId === user.memberId
+                                      ? "Saving…"
+                                      : "Save Changes"}
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </article>

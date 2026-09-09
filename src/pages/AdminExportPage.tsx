@@ -6,6 +6,7 @@ import {
   FileJson,
   FileSpreadsheet,
   Map,
+  ScrollText,
 } from "lucide-react";
 
 import AdminShell from "../components/AdminShell";
@@ -15,6 +16,7 @@ import {
 
 import {
   downloadBurialCsv,
+  downloadFullAuditLogCsv,
   downloadFullBackup,
   downloadMapGeoJson,
 } from "../services/admin";
@@ -103,6 +105,23 @@ export default function AdminExportPage() {
             {busy === "geojson" ? "Preparing…" : "Download GeoJSON"}
           </button>
         </div>
+
+        <div className="admin-export-card-v15">
+          <ScrollText size={20} />
+          <strong>Full Audit Log</strong>
+          <span>
+            Complete CSV history of every retained audit event, including account, action, record identifiers and details JSON.
+          </span>
+          <button
+            type="button"
+            className="admin-button-primary-v15"
+            disabled={!isOwner || busy !== null}
+            onClick={() => void run("audit", downloadFullAuditLogCsv)}
+          >
+            {busy === "audit" ? "Preparing…" : "Download Full Audit CSV"}
+          </button>
+        </div>
+
       </div>
 
       <div className="admin-note-v15" style={{ marginTop: 12 }}>

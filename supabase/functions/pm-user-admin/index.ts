@@ -15,6 +15,7 @@ const corsHeaders = {
 type Role =
   | "owner"
   | "recovery_owner"
+  | "platform_recovery"
   | "manager"
   | "user";
 
@@ -43,6 +44,19 @@ function json(
           "application/json",
       },
     }
+  );
+}
+
+
+function ownerRole(
+  role: Role
+) {
+  return [
+    "owner",
+    "recovery_owner",
+    "platform_recovery",
+  ].includes(
+    role
   );
 }
 
@@ -80,7 +94,6 @@ Deno.serve(
         "SUPABASE_URL"
       );
 
-
     const serviceRoleKey =
       Deno.env.get(
         "SUPABASE_SERVICE_ROLE_KEY"
@@ -104,7 +117,14 @@ Deno.serve(
         "Authorization"
       );
 
-    if (!authorization) {
+    if (
+      !authorization ||
+      !authorization
+        .toLowerCase()
+        .startsWith(
+          "bearer "
+        )
+    ) {
       return json(
         {
           error:
@@ -114,6 +134,23 @@ Deno.serve(
       );
     }
 
+    const accessToken =
+      authorization
+        .replace(
+          /^Bearer\s+/i,
+          ""
+        )
+        .trim();
+
+    if (!accessToken) {
+      return json(
+        {
+          error:
+            "Authentication token is missing.",
+        },
+        401
+      );
+    }
 
     const service =
       createClient(
@@ -130,35 +167,37 @@ Deno.serve(
       );
 
     try {
-      const accessToken =
-        authorization.replace(
-          /^Bearer\s+/i,
-          ""
+      /*
+       * Do not call auth.getUser() on a service client here.
+       * Some auth-js / Edge Runtime combinations return
+       * AuthSessionMissingError even when a JWT was supplied.
+       *
+       * Validate the exact bearer token directly against the
+       * project's Auth REST endpoint instead.
+       */
+      const authResponse =
+        await fetch(
+          `${supabaseUrl}/auth/v1/user`,
+          {
+            method:
+              "GET",
+            headers: {
+              Authorization:
+                `Bearer ${accessToken}`,
+              apikey:
+                serviceRoleKey,
+            },
+          }
         );
 
-      if (!accessToken) {
+      if (!authResponse.ok) {
+        const text =
+          await authResponse.text();
+
         return json(
           {
             error:
-              "Authentication token is missing.",
-          },
-          401
-        );
-      }
-
-      const userResponse =
-        await service.auth.getUser(
-          accessToken
-        );
-
-      if (
-        userResponse.error ||
-        !userResponse.data.user
-      ) {
-        return json(
-          {
-            error:
-              userResponse.error?.message ||
+              text ||
               "Invalid or expired PlotMap session.",
           },
           401
@@ -166,11 +205,28 @@ Deno.serve(
       }
 
       const requesterUser =
-        userResponse.data.user;
+        await authResponse.json() as {
+          id: string;
+          email?: string;
+        };
+
+      if (
+        !requesterUser.id
+      ) {
+        return json(
+          {
+            error:
+              "Authenticated user could not be resolved.",
+          },
+          401
+        );
+      }
 
       const memberResponse =
         await service
-          .from("pm_members")
+          .from(
+            "pm_members"
+          )
           .select(
             "id, organization_id, role, active"
           )
@@ -211,13 +267,11 @@ Deno.serve(
         };
 
       if (
-        ![
-          "owner",
-          "recovery_owner",
-          "manager",
-        ].includes(
+        !ownerRole(
           requester.role
-        )
+        ) &&
+        requester.role !==
+          "manager"
       ) {
         return json(
           {
@@ -238,18 +292,24 @@ Deno.serve(
         );
 
       const isOwner =
-        requester.role ===
-          "owner" ||
-        requester.role ===
-          "recovery_owner";
+        ownerRole(
+          requester.role
+        );
+
 
       async function audit(
         actionName: string,
         entityId: string | null,
-        details: Record<string, unknown>,
+        details:
+          Record<
+            string,
+            unknown
+          >,
       ) {
         await service
-          .from("pm_audit_log")
+          .from(
+            "pm_audit_log"
+          )
           .insert({
             organization_id:
               requester.organizationId,
@@ -265,12 +325,15 @@ Deno.serve(
           });
       }
 
+
       if (
         action === "list"
       ) {
         let query =
           service
-            .from("pm_members")
+            .from(
+              "pm_members"
+            )
             .select(
               "id, user_id, display_name, role, active, permissions, created_at"
             )
@@ -300,10 +363,13 @@ Deno.serve(
         }
 
         const authListResponse =
-          await service.auth.admin.listUsers({
-            page: 1,
-            perPage: 1000,
-          });
+          await service
+            .auth
+            .admin
+            .listUsers({
+              page: 1,
+              perPage: 1000,
+            });
 
         if (
           authListResponse.error
@@ -316,7 +382,8 @@ Deno.serve(
             authListResponse.data.users.map(
               (user) => [
                 user.id,
-                user.email || "",
+                user.email ||
+                  "",
               ]
             )
           );
@@ -358,6 +425,7 @@ Deno.serve(
         });
       }
 
+
       if (
         action === "create"
       ) {
@@ -387,13 +455,70 @@ Deno.serve(
             "user"
           ) as Role;
 
-        const role:
-          "manager" | "user" =
+        let role:
+          "recovery_owner" |
+          "manager" |
+          "user" =
+            "user";
+
+        if (
           isOwner &&
           requestedRole ===
             "manager"
-            ? "manager"
-            : "user";
+        ) {
+          role =
+            "manager";
+        }
+
+        if (
+          isOwner &&
+          requestedRole ===
+            "recovery_owner"
+        ) {
+          const existing =
+            await service
+              .from(
+                "pm_members"
+              )
+              .select(
+                "id"
+              )
+              .eq(
+                "organization_id",
+                requester.organizationId
+              )
+              .eq(
+                "role",
+                "recovery_owner"
+              )
+              .eq(
+                "active",
+                true
+              )
+              .limit(1)
+              .maybeSingle();
+
+          if (
+            existing.error
+          ) {
+            throw existing.error;
+          }
+
+          if (
+            existing.data
+          ) {
+            return json(
+              {
+                error:
+                  "A client Recovery Owner already exists. Edit that account instead.",
+              },
+              409
+            );
+          }
+
+          role =
+            "recovery_owner";
+        }
 
         if (
           !email ||
@@ -422,25 +547,30 @@ Deno.serve(
         }
 
         const authCreate =
-          await service.auth.admin.createUser({
-            email,
-            password,
-            email_confirm:
-              true,
-            user_metadata: {
-              display_name:
-                displayName,
-            },
-          });
+          await service
+            .auth
+            .admin
+            .createUser({
+              email,
+              password,
+              email_confirm:
+                true,
+              user_metadata: {
+                display_name:
+                  displayName,
+              },
+            });
 
         if (
           authCreate.error ||
           !authCreate.data.user
         ) {
-          throw authCreate.error ||
+          throw (
+            authCreate.error ||
             new Error(
               "Could not create authentication account."
-            );
+            )
+          );
         }
 
         const createdUser =
@@ -448,7 +578,9 @@ Deno.serve(
 
         const memberInsert =
           await service
-            .from("pm_members")
+            .from(
+              "pm_members"
+            )
             .insert({
               organization_id:
                 requester.organizationId,
@@ -463,7 +595,8 @@ Deno.serve(
                 requester.userId,
               permissions: {
                 can_edit_plot_names:
-                  role === "user" &&
+                  role ===
+                    "user" &&
                   Boolean(
                     body.canEditPlotNames
                   ),
@@ -477,11 +610,32 @@ Deno.serve(
         if (
           memberInsert.error
         ) {
-          await service.auth.admin.deleteUser(
-            createdUser.id
-          );
+          await service
+            .auth
+            .admin
+            .deleteUser(
+              createdUser.id
+            );
 
           throw memberInsert.error;
+        }
+
+        if (
+          role ===
+          "recovery_owner"
+        ) {
+          await service
+            .from(
+              "pm_instance_settings"
+            )
+            .update({
+              recovery_owner_user_id:
+                createdUser.id,
+            })
+            .eq(
+              "organization_id",
+              requester.organizationId
+            );
         }
 
         await audit(
@@ -517,6 +671,300 @@ Deno.serve(
         });
       }
 
+
+      if (
+        action ===
+        "update_identity"
+      ) {
+        if (!isOwner) {
+          return json(
+            {
+              error:
+                "Only an Owner-level account may change protected account identities.",
+            },
+            403
+          );
+        }
+
+        const memberId =
+          String(
+            body.memberId ||
+            ""
+          );
+
+        const targetResponse =
+          await service
+            .from(
+              "pm_members"
+            )
+            .select(
+              "id, user_id, display_name, role, active, permissions, created_at"
+            )
+            .eq(
+              "id",
+              memberId
+            )
+            .eq(
+              "organization_id",
+              requester.organizationId
+            )
+            .maybeSingle();
+
+        if (
+          targetResponse.error ||
+          !targetResponse.data
+        ) {
+          return json(
+            {
+              error:
+                "Target account was not found.",
+            },
+            404
+          );
+        }
+
+        const target =
+          targetResponse.data;
+
+        const targetRole =
+          target.role as Role;
+
+        if (
+          ![
+            "owner",
+            "recovery_owner",
+            "platform_recovery",
+          ].includes(
+            targetRole
+          )
+        ) {
+          return json(
+            {
+              error:
+                "This action is only for Owner and recovery identities.",
+            },
+            400
+          );
+        }
+
+        const displayName =
+          String(
+            body.displayName ||
+            ""
+          ).trim();
+
+        if (!displayName) {
+          return json(
+            {
+              error:
+                "Display name is required.",
+            },
+            400
+          );
+        }
+
+        const requestedEmail =
+          String(
+            body.email ||
+            ""
+          )
+            .trim()
+            .toLowerCase();
+
+        const requestedPassword =
+          String(
+            body.password ||
+            ""
+          );
+
+        if (
+          targetRole ===
+          "platform_recovery" &&
+          (
+            requestedEmail ||
+            requestedPassword
+          )
+        ) {
+          return json(
+            {
+              error:
+                "The OneTime Labs platform recovery email and password are protected. Only its display name may be changed.",
+            },
+            403
+          );
+        }
+
+        if (
+          targetRole !==
+            "platform_recovery" &&
+          !requestedEmail
+        ) {
+          return json(
+            {
+              error:
+                "Email is required for Owner and Recovery Owner accounts.",
+            },
+            400
+          );
+        }
+
+        if (
+          requestedPassword &&
+          requestedPassword.length <
+            10
+        ) {
+          return json(
+            {
+              error:
+                "New password must be at least 10 characters.",
+            },
+            400
+          );
+        }
+
+        if (
+          targetRole !==
+          "platform_recovery"
+        ) {
+          const authUpdate: {
+            email: string;
+            password?: string;
+            email_confirm:
+              boolean;
+            user_metadata: {
+              display_name:
+                string;
+            };
+          } = {
+            email:
+              requestedEmail,
+            email_confirm:
+              true,
+            user_metadata: {
+              display_name:
+                displayName,
+            },
+          };
+
+          if (
+            requestedPassword
+          ) {
+            authUpdate.password =
+              requestedPassword;
+          }
+
+          const authResponse =
+            await service
+              .auth
+              .admin
+              .updateUserById(
+                target.user_id,
+                authUpdate
+              );
+
+          if (
+            authResponse.error
+          ) {
+            throw authResponse.error;
+          }
+        } else {
+          const authResponse =
+            await service
+              .auth
+              .admin
+              .updateUserById(
+                target.user_id,
+                {
+                  user_metadata: {
+                    display_name:
+                      displayName,
+                  },
+                }
+              );
+
+          if (
+            authResponse.error
+          ) {
+            throw authResponse.error;
+          }
+        }
+
+        const memberUpdate =
+          await service
+            .from(
+              "pm_members"
+            )
+            .update({
+              display_name:
+                displayName,
+            })
+            .eq(
+              "id",
+              target.id
+            )
+            .select(
+              "id, user_id, display_name, role, active, permissions, created_at"
+            )
+            .single();
+
+        if (
+          memberUpdate.error
+        ) {
+          throw memberUpdate.error;
+        }
+
+        await audit(
+          "user.identity_update",
+          target.id,
+          {
+            target_role:
+              targetRole,
+            email_changed:
+              targetRole !==
+                "platform_recovery",
+            password_changed:
+              Boolean(
+                requestedPassword
+              ),
+            display_name:
+              displayName,
+          }
+        );
+
+        return json({
+          data: {
+            memberId:
+              memberUpdate.data.id,
+            userId:
+              memberUpdate.data.user_id,
+            email:
+              targetRole ===
+                "platform_recovery"
+                ? (
+                    await service.auth.admin.getUserById(
+                      target.user_id
+                    )
+                  ).data.user?.email ||
+                  ""
+                : requestedEmail,
+            displayName:
+              memberUpdate.data.display_name,
+            role:
+              memberUpdate.data.role,
+            active:
+              memberUpdate.data.active,
+            canEditPlotNames:
+              Boolean(
+                memberUpdate.data.permissions
+                  ?.can_edit_plot_names
+              ),
+            createdAt:
+              memberUpdate.data.created_at,
+          },
+        });
+      }
+
+
       if (
         action === "update" ||
         action === "delete"
@@ -529,7 +977,9 @@ Deno.serve(
 
         const targetResponse =
           await service
-            .from("pm_members")
+            .from(
+              "pm_members"
+            )
             .select(
               "id, user_id, role, active, permissions"
             )
@@ -563,17 +1013,31 @@ Deno.serve(
           target.role as Role;
 
         if (
-          targetRole ===
-            "owner" ||
-          targetRole ===
-            "recovery_owner" ||
-          target.user_id ===
-            requester.userId
+          [
+            "owner",
+            "recovery_owner",
+            "platform_recovery",
+          ].includes(
+            targetRole
+          )
         ) {
           return json(
             {
               error:
-                "Owner and Recovery Owner accounts cannot be modified here.",
+                "Owner and recovery identities are protected from role/status changes and deletion.",
+            },
+            403
+          );
+        }
+
+        if (
+          target.user_id ===
+          requester.userId
+        ) {
+          return json(
+            {
+              error:
+                "You cannot modify your own operational access from this screen.",
             },
             403
           );
@@ -610,9 +1074,12 @@ Deno.serve(
           );
 
           const deleteResponse =
-            await service.auth.admin.deleteUser(
-              target.user_id
-            );
+            await service
+              .auth
+              .admin
+              .deleteUser(
+                target.user_id
+              );
 
           if (
             deleteResponse.error
@@ -622,7 +1089,8 @@ Deno.serve(
 
           return json({
             data: {
-              deleted: true,
+              deleted:
+                true,
             },
           });
         }
@@ -634,12 +1102,13 @@ Deno.serve(
           );
 
         const nextRole:
-          "manager" | "user" =
-          isOwner &&
-          requestedRole ===
-            "manager"
-            ? "manager"
-            : "user";
+          "manager" |
+          "user" =
+            isOwner &&
+            requestedRole ===
+              "manager"
+              ? "manager"
+              : "user";
 
         const nextActive =
           typeof body.active ===
@@ -649,7 +1118,8 @@ Deno.serve(
 
         const nextPermissions = {
           can_edit_plot_names:
-            nextRole === "user" &&
+            nextRole ===
+              "user" &&
             Boolean(
               body.canEditPlotNames
             ),
@@ -657,7 +1127,9 @@ Deno.serve(
 
         const updateResponse =
           await service
-            .from("pm_members")
+            .from(
+              "pm_members"
+            )
             .update({
               role:
                 nextRole,
@@ -682,9 +1154,12 @@ Deno.serve(
         }
 
         const authResponse =
-          await service.auth.admin.getUserById(
-            target.user_id
-          );
+          await service
+            .auth
+            .admin
+            .getUserById(
+              target.user_id
+            );
 
         await audit(
           "user.update",
@@ -695,7 +1170,8 @@ Deno.serve(
             active:
               nextActive,
             can_edit_plot_names:
-              nextPermissions.can_edit_plot_names,
+              nextPermissions
+                .can_edit_plot_names,
           }
         );
 
@@ -732,7 +1208,9 @@ Deno.serve(
         },
         400
       );
-    } catch (error) {
+    } catch (
+      error
+    ) {
       console.error(
         "pm-user-admin:",
         error

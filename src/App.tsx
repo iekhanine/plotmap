@@ -90,12 +90,12 @@ import {
   assignPlotsToArea,
   createMapArea,
   createPlotsBatch,
+  deleteMapArea,
   deletePlotsBatch,
   getPersonDisplayName,
   getYear,
   loadPlotMapDataset,
-  updateMapAreaGeometry,
-  updateMapAreaLabel,
+  updateMapAreaChanges,
   updatePlotDetails,
   updatePlotPlacement,
   savePlotPersonInfo,
@@ -707,7 +707,34 @@ function usePanelDrag() {
    Main component
    ========================================================== */
 
+
 export default function App() {
+  const [
+    sidebarWidth,
+    setSidebarWidth,
+  ] =
+    useState(() => {
+      const saved =
+        Number(
+          window.localStorage.getItem(
+            "plotmap_staff_sidebar_width"
+          )
+        );
+
+      return (
+        Number.isFinite(
+          saved
+        ) &&
+        saved >= 250 &&
+        saved <= 680
+      )
+        ? saved
+        : 310;
+    });
+
+  const sidebarResizeRef =
+    useRef(false);
+
   const navigate =
     useNavigate();
 
@@ -749,6 +776,12 @@ export default function App() {
 
   const modifyInteractionRef =
     useRef<Modify | null>(
+      null
+    );
+
+
+  const editingAreaFeatureRef =
+    useRef<Feature | null>(
       null
     );
 
@@ -877,6 +910,13 @@ export default function App() {
       null
     );
 
+
+  const [
+    areaShapeDirty,
+    setAreaShapeDirty,
+  ] =
+    useState(false);
+
   const [
     newAreaName,
     setNewAreaName,
@@ -938,6 +978,15 @@ export default function App() {
     setConfirmingDelete,
   ] =
     useState(false);
+
+
+  const [
+    confirmingSingleDeleteId,
+    setConfirmingSingleDeleteId,
+  ] =
+    useState<string | null>(
+      null
+    );
 
   /*
    * APP 006B
@@ -1116,6 +1165,14 @@ export default function App() {
         plot.id ===
         selectedPlotId
     ) || null;
+
+
+  const areaNameDirty =
+    Boolean(
+      selectedArea &&
+      areaNameDraft.trim() !==
+        selectedArea.label
+    );
 
   useEffect(() => {
     setAreaNameDraft(
@@ -2224,6 +2281,13 @@ export default function App() {
       null
     );
 
+    setAreaShapeDirty(
+      false
+    );
+
+    editingAreaFeatureRef.current =
+      null;
+
     if (
       pendingNewAreaFeatureRef
         .current
@@ -2752,6 +2816,40 @@ export default function App() {
      - Alt-click a vertex removes it.
      ======================================================== */
 
+  function toggleEditAreaShape() {
+    if (
+      editorMode ===
+      "edit-area-shape"
+    ) {
+      if (
+        areaShapeDirty ||
+        areaNameDirty
+      ) {
+        const discard =
+          window.confirm(
+            "You have unsaved changes to this Zone.\n\nIf you stop editing now, your changes will not be saved.\n\nDiscard the changes?"
+          );
+
+        if (!discard) {
+          return;
+        }
+      }
+
+      cancelAreaShapeEdit();
+      return;
+    }
+
+    if (
+      editorMode !==
+      "browse"
+    ) {
+      return;
+    }
+
+    startEditAreaShape();
+  }
+
+
   function startEditAreaShape() {
     const map =
       mapRef.current;
@@ -2808,6 +2906,22 @@ export default function App() {
     modifyInteractionRef.current =
       interaction;
 
+    editingAreaFeatureRef.current =
+      feature;
+
+    setAreaShapeDirty(
+      false
+    );
+
+    interaction.on(
+      "modifystart",
+      () => {
+        setAreaShapeDirty(
+          true
+        );
+      }
+    );
+
     interaction.on(
       "modifyend",
       () => {
@@ -2824,8 +2938,12 @@ export default function App() {
             )
           );
 
+          setAreaShapeDirty(
+            true
+          );
+
           setEditorMessage(
-            "Shape changed. Continue adjusting vertices or save."
+            "Shape changed. Use the Save button beside the Zone name to keep it, or click Edit Shape again to discard unsaved changes."
           );
         }
       }
@@ -2840,7 +2958,7 @@ export default function App() {
     );
 
     setEditorMessage(
-      "Drag vertices to change corners. Add a bend on an edge as needed. Alt-click a vertex to remove it."
+      "Drag vertices to change corners. The Save button beside the Zone name saves the name, shape, or both. Click Edit Shape again to cancel."
     );
   }
 
@@ -2849,6 +2967,18 @@ export default function App() {
 
     setPendingAreaGeometry(
       null
+    );
+
+    setAreaShapeDirty(
+      false
+    );
+
+    editingAreaFeatureRef.current =
+      null;
+
+    setAreaNameDraft(
+      selectedArea?.label ||
+      ""
     );
 
     setEditorMode(
@@ -2865,89 +2995,20 @@ export default function App() {
     );
   }
 
-  async function saveAreaShape() {
-    if (
-      !selectedArea ||
-      !pendingAreaGeometry
-    ) {
-      return;
-    }
-
-    try {
-      setSaving(
-        true
-      );
-
-      await updateMapAreaGeometry(
-        selectedArea.id,
-        pendingAreaGeometry
-      );
-
-      setDataset(
-        (current) => {
-          if (!current) {
-            return current;
-          }
-
-          return {
-            ...current,
-
-            mapAreas:
-              current.mapAreas.map(
-                (area) =>
-                  area.id ===
-                  selectedArea.id
-                    ? {
-                        ...area,
-
-                        geometry:
-                          pendingAreaGeometry,
-                      }
-                    : area
-              ),
-          };
-        }
-      );
-
-      removeModifyInteraction();
-
-      setPendingAreaGeometry(
-        null
-      );
-
-      setEditorMode(
-        "browse"
-      );
-
-      setEditorMessage(
-        "Area shape saved."
-      );
-    } catch (saveError) {
-      console.error(
-        "PlotMap area shape save error:",
-        saveError
-      );
-
-      setEditorMessage(
-        saveError instanceof
-          Error
-          ? saveError.message
-          : "Could not save area shape."
-      );
-    } finally {
-      setSaving(
-        false
-      );
-    }
-  }
-
-
   /* ========================================================
      APP 018
-     Rename selected area
+     Save selected Zone changes
+
+     One Save button commits whichever parts changed:
+     - name only
+     - shape only
+     - both name + shape
+
+     If shape editing is active, Save exits Edit Shape after
+     committing the live OpenLayers polygon.
      ======================================================== */
 
-  async function saveAreaName() {
+  async function saveSelectedAreaChanges() {
     if (!selectedArea) {
       return;
     }
@@ -2957,9 +3018,47 @@ export default function App() {
 
     if (!label) {
       setEditorMessage(
-        "Enter an area name."
+        "Enter a Zone name."
+      );
+      return;
+    }
+
+    const nameChanged =
+      label !==
+      selectedArea.label;
+
+    const liveGeometry =
+      editingAreaFeatureRef.current
+        ?.getGeometry();
+
+    let geometryToSave:
+      MapAreaPolygonGeometry |
+      null =
+        pendingAreaGeometry;
+
+    if (
+      liveGeometry instanceof
+      Polygon
+    ) {
+      geometryToSave =
+        polygonToAreaGeometry(
+          liveGeometry
+        );
+    }
+
+    const shapeChanged =
+      areaShapeDirty &&
+      Boolean(
+        geometryToSave
       );
 
+    if (
+      !nameChanged &&
+      !shapeChanged
+    ) {
+      setEditorMessage(
+        "No Zone changes to save."
+      );
       return;
     }
 
@@ -2968,9 +3067,19 @@ export default function App() {
         true
       );
 
-      await updateMapAreaLabel(
+      await updateMapAreaChanges(
         selectedArea.id,
-        label
+        {
+          label:
+            nameChanged
+              ? label
+              : undefined,
+
+          geometry:
+            shapeChanged
+              ? geometryToSave!
+              : undefined,
+        }
       );
 
       setDataset(
@@ -2989,7 +3098,16 @@ export default function App() {
                   selectedArea.id
                     ? {
                         ...area,
-                        label,
+
+                        label:
+                          nameChanged
+                            ? label
+                            : area.label,
+
+                        geometry:
+                          shapeChanged
+                            ? geometryToSave!
+                            : area.geometry,
                       }
                     : area
               ),
@@ -2997,15 +3115,194 @@ export default function App() {
         }
       );
 
+      if (
+        editorMode ===
+        "edit-area-shape"
+      ) {
+        removeModifyInteraction();
+
+        editingAreaFeatureRef.current =
+          null;
+
+        setPendingAreaGeometry(
+          null
+        );
+
+        setAreaShapeDirty(
+          false
+        );
+
+        setEditorMode(
+          "browse"
+        );
+
+        setAreaRenderRevision(
+          (value) =>
+            value + 1
+        );
+      }
+
+      setAreaNameDraft(
+        label
+      );
+
       setEditorMessage(
-        `Renamed area to ${label}.`
+        nameChanged &&
+        shapeChanged
+          ? `Zone "${label}" name and shape saved.`
+          : nameChanged
+            ? `Zone renamed to "${label}".`
+            : "Zone shape saved."
       );
     } catch (saveError) {
+      console.error(
+        "PlotMap Zone save error:",
+        saveError
+      );
+
       setEditorMessage(
-        saveError instanceof
-          Error
+        saveError instanceof Error
           ? saveError.message
-          : "Could not rename area."
+          : "Could not save Zone changes."
+      );
+    } finally {
+      setSaving(
+        false
+      );
+    }
+  }
+
+
+
+  /* ========================================================
+     APP 018B
+     Delete selected Zone
+
+     Deleting a Zone never deletes its plots. Existing plots
+     are returned to "No Zone" so accidental Zone cleanup
+     cannot destroy grave records.
+     ======================================================== */
+
+  async function deleteSelectedArea() {
+    if (
+      !selectedArea ||
+      editorMode !==
+        "browse"
+    ) {
+      return;
+    }
+
+    const plotCount =
+      zoneCounts.get(
+        selectedArea.id
+      ) || 0;
+
+    const message =
+      plotCount > 0
+        ? `Delete Zone "${selectedArea.label}"?\n\n${plotCount} plot${plotCount === 1 ? "" : "s"} currently belong to this Zone. The plots will NOT be deleted; they will be moved to No Zone.\n\nThis cannot be undone.`
+        : `Delete Zone "${selectedArea.label}"?\n\nThis Zone contains no plots.\n\nThis cannot be undone.`;
+
+    if (
+      !window.confirm(
+        message
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setSaving(
+        true
+      );
+
+      const areaId =
+        selectedArea.id;
+
+      const result =
+        await deleteMapArea(
+          areaId
+        );
+
+      setDataset(
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+
+            mapAreas:
+              current.mapAreas.filter(
+                (area) =>
+                  area.id !==
+                  areaId
+              ),
+
+            plots:
+              current.plots.map(
+                (plot) =>
+                  plot.plot_area_id ===
+                  areaId
+                    ? {
+                        ...plot,
+                        plot_area_id:
+                          null,
+                      }
+                    : plot
+              ),
+          };
+        }
+      );
+
+      if (
+        zoneFilter ===
+        areaId
+      ) {
+        setZoneFilter(
+          "all"
+        );
+      }
+
+      if (
+        bulkAreaId ===
+        areaId
+      ) {
+        setBulkAreaId(
+          ""
+        );
+      }
+
+      setSelectedAreaId(
+        null
+      );
+
+      setAreaNameDraft(
+        ""
+      );
+
+      setPendingAreaGeometry(
+        null
+      );
+
+      setAreaRenderRevision(
+        (value) =>
+          value + 1
+      );
+
+      setEditorMessage(
+        result.unassignedPlots >
+          0
+          ? `Zone deleted. ${result.unassignedPlots} plot${result.unassignedPlots === 1 ? "" : "s"} moved to No Zone.`
+          : "Zone deleted."
+      );
+    } catch (
+      deleteError
+    ) {
+      setEditorMessage(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Could not delete Zone."
       );
     } finally {
       setSaving(
@@ -3019,6 +3316,40 @@ export default function App() {
      APP 019
      Batch-create plots INSIDE selected area
      ======================================================== */
+
+  function toggleBatchPlacement() {
+    if (
+      editorMode ===
+      "batch-place"
+    ) {
+      if (
+        stagedPlots.length >
+        0
+      ) {
+        const discard =
+          window.confirm(
+            `You have ${stagedPlots.length} unsaved staged plot${stagedPlots.length === 1 ? "" : "s"}.\n\nDiscard ${stagedPlots.length === 1 ? "it" : "them"} and stop Batch Place?`
+          );
+
+        if (!discard) {
+          return;
+        }
+      }
+
+      cancelBatchPlacement();
+      return;
+    }
+
+    if (
+      editorMode !==
+      "browse"
+    ) {
+      return;
+    }
+
+    startBatchPlacement();
+  }
+
 
   function startBatchPlacement() {
     if (!selectedAreaId) {
@@ -3542,6 +3873,83 @@ export default function App() {
   }
 
 
+
+  async function deleteCurrentPlot() {
+    if (
+      !selectedPlot ||
+      confirmingSingleDeleteId !==
+        selectedPlot.id
+    ) {
+      return;
+    }
+
+    try {
+      setSaving(
+        true
+      );
+
+      const plotId =
+        selectedPlot.id;
+
+      const plotNumber =
+        selectedPlot.plot_number;
+
+      const deleted =
+        await deletePlotsBatch([
+          plotId,
+        ]);
+
+      if (
+        deleted !== 1
+      ) {
+        throw new Error(
+          `Supabase reported ${deleted} deleted plots instead of 1.`
+        );
+      }
+
+      setDataset(
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            plots:
+              current.plots.filter(
+                (plot) =>
+                  plot.id !==
+                  plotId
+              ),
+          };
+        }
+      );
+
+      setSelectedPlotId(
+        null
+      );
+
+      setConfirmingSingleDeleteId(
+        null
+      );
+
+      setEditorMessage(
+        `Plot ${plotNumber} deleted.`
+      );
+    } catch (deleteError) {
+      setEditorMessage(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Could not delete this plot."
+      );
+    } finally {
+      setSaving(
+        false
+      );
+    }
+  }
+
+
   /* ========================================================
      APP 022
      Edit one plot's data
@@ -3965,6 +4373,129 @@ export default function App() {
     }, [dataset]);
 
 
+
+  useEffect(() => {
+    function move(
+      event: PointerEvent
+    ) {
+      if (
+        !sidebarResizeRef.current
+      ) {
+        return;
+      }
+
+      const next =
+        Math.min(
+          680,
+          Math.max(
+            250,
+            event.clientX
+          )
+        );
+
+      setSidebarWidth(
+        next
+      );
+    }
+
+    function stop() {
+      if (
+        !sidebarResizeRef.current
+      ) {
+        return;
+      }
+
+      sidebarResizeRef.current =
+        false;
+
+      document.body.style
+        .cursor = "";
+
+      document.body.style
+        .userSelect = "";
+    }
+
+    window.addEventListener(
+      "pointermove",
+      move
+    );
+
+    window.addEventListener(
+      "pointerup",
+      stop
+    );
+
+    return () => {
+      window.removeEventListener(
+        "pointermove",
+        move
+      );
+
+      window.removeEventListener(
+        "pointerup",
+        stop
+      );
+    };
+  }, []);
+
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "plotmap_staff_sidebar_width",
+      String(
+        sidebarWidth
+      )
+    );
+
+    window.setTimeout(
+      () =>
+        mapRef.current
+          ?.updateSize(),
+      0
+    );
+  }, [
+    sidebarWidth,
+  ]);
+
+
+  function startSidebarResize() {
+    sidebarResizeRef.current =
+      true;
+
+    document.body.style
+      .cursor =
+        "col-resize";
+
+    document.body.style
+      .userSelect =
+        "none";
+  }
+
+
+  function openRouteInNewTab(
+    route: string
+  ) {
+    window.open(
+      new URL(
+        route,
+        window.location.origin
+      ).toString(),
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
+
+
+  useEffect(() => {
+    setConfirmingSingleDeleteId(
+      null
+    );
+  }, [
+    selectedPlotId,
+  ]);
+
+
   /* ========================================================
      APP 025
      Render
@@ -3999,7 +4530,7 @@ export default function App() {
               type="button"
               className="header-admin-button"
               onClick={() =>
-                navigate(
+                openRouteInNewTab(
                   "/find"
                 )
               }
@@ -4016,7 +4547,7 @@ export default function App() {
               type="button"
               className="header-admin-button"
               onClick={() =>
-                navigate(
+                openRouteInNewTab(
                   "/admin"
                 )
               }
@@ -4033,7 +4564,7 @@ export default function App() {
               type="button"
               className="header-admin-button"
               onClick={() =>
-                navigate(
+                openRouteInNewTab(
                   "/field"
                 )
               }
@@ -4143,8 +4674,23 @@ export default function App() {
         </div>
       )}
 
-      <main className="plotmap-workspace">
+      <main
+        className="plotmap-workspace"
+        style={{
+          gridTemplateColumns:
+            `${sidebarWidth}px minmax(0, 1fr)`,
+        }}
+      >
         <aside className="plotmap-sidebar">
+          <div
+            className="plotmap-sidebar-resizer-v18"
+            role="separator"
+            aria-orientation="vertical"
+            title="Drag to resize sidebar"
+            onPointerDown={
+              startSidebarResize
+            }
+          />
           <section className="cemetery-summary">
             <span className="eyebrow">
               CEMETERY
@@ -4786,7 +5332,9 @@ export default function App() {
                       maxLength={80}
                       disabled={
                         editorMode !==
-                        "browse"
+                          "browse" &&
+                        editorMode !==
+                          "edit-area-shape"
                       }
                       onChange={
                         (event) =>
@@ -4801,17 +5349,21 @@ export default function App() {
                       type="button"
                       disabled={
                         saving ||
-                        editorMode !==
-                          "browse" ||
                         !areaNameDraft
                           .trim() ||
-                        areaNameDraft
-                          .trim() ===
-                          selectedArea
-                            .label
+                        (
+                          editorMode !==
+                            "browse" &&
+                          editorMode !==
+                            "edit-area-shape"
+                        ) ||
+                        (
+                          !areaNameDirty &&
+                          !areaShapeDirty
+                        )
                       }
-                      onClick={
-                        saveAreaName
+                      onClick={() =>
+                        void saveSelectedAreaChanges()
                       }
                     >
                       Save
@@ -4821,12 +5373,20 @@ export default function App() {
                   <div className="area-action-grid">
                     <button
                       type="button"
+                      className={
+                        editorMode ===
+                        "edit-area-shape"
+                          ? "active-tool-v182"
+                          : undefined
+                      }
                       disabled={
                         editorMode !==
-                        "browse"
+                          "browse" &&
+                        editorMode !==
+                          "edit-area-shape"
                       }
                       onClick={
-                        startEditAreaShape
+                        toggleEditAreaShape
                       }
                     >
                       <BoxSelect
@@ -4837,12 +5397,20 @@ export default function App() {
 
                     <button
                       type="button"
+                      className={
+                        editorMode ===
+                        "batch-place"
+                          ? "active-tool-v182"
+                          : undefined
+                      }
                       disabled={
                         editorMode !==
-                        "browse"
+                          "browse" &&
+                        editorMode !==
+                          "batch-place"
                       }
                       onClick={
-                        startBatchPlacement
+                        toggleBatchPlacement
                       }
                     >
                       <MousePointerClick
@@ -4851,6 +5419,24 @@ export default function App() {
                       Batch Place
                     </button>
                   </div>
+
+                  <button
+                    type="button"
+                    className="delete-zone-button-v182"
+                    disabled={
+                      saving ||
+                      editorMode !==
+                        "browse"
+                    }
+                    onClick={() =>
+                      void deleteSelectedArea()
+                    }
+                  >
+                    <Trash2
+                      size={13}
+                    />
+                    Delete Zone
+                  </button>
                 </div>
               )}
 
@@ -4863,51 +5449,53 @@ export default function App() {
           )}
 
 
-          <div className="map-toolbar">
-            {selectedArea && (
-              <button
-                type="button"
-                onClick={() =>
-                  focusArea(
-                    selectedArea
-                  )
-                }
-              >
-                <BoxSelect
-                  size={14}
-                />
-                {
-                  selectedArea.label
-                }
-              </button>
+          <div className="map-top-controls-v185">
+            <div className="map-toolbar">
+              {selectedArea && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    focusArea(
+                      selectedArea
+                    )
+                  }
+                >
+                  <BoxSelect
+                    size={14}
+                  />
+                  {
+                    selectedArea.label
+                  }
+                </button>
+              )}
+            </div>
+
+            {canEditCore &&
+            editorOpen && (
+              <div className="map-editor-status">
+                {editorMode ===
+                  "draw-area" &&
+                  "NEW AREA — click corners; double-click to finish"}
+
+                {editorMode ===
+                  "edit-area-shape" &&
+                  "EDIT SHAPE — drag vertices; Alt-click a vertex to remove"}
+
+                {editorMode ===
+                  "batch-place" &&
+                  `BATCH — ${stagedPlots.length} staged in ${selectedArea?.label}`}
+
+                {editorMode ===
+                  "place" &&
+                  "REPOSITION — click the exact plot location"}
+
+                {editorMode ===
+                  "browse" &&
+                  (editorMessage ||
+                    "MAP EDITOR")}
+              </div>
             )}
           </div>
-
-          {canEditCore &&
-          editorOpen && (
-            <div className="map-editor-status">
-              {editorMode ===
-                "draw-area" &&
-                "NEW AREA — click corners; double-click to finish"}
-
-              {editorMode ===
-                "edit-area-shape" &&
-                "EDIT SHAPE — drag vertices; Alt-click a vertex to remove"}
-
-              {editorMode ===
-                "batch-place" &&
-                `BATCH — ${stagedPlots.length} staged in ${selectedArea?.label}`}
-
-              {editorMode ===
-                "place" &&
-                "REPOSITION — click the exact plot location"}
-
-              {editorMode ===
-                "browse" &&
-                (editorMessage ||
-                  "MAP EDITOR")}
-            </div>
-          )}
 
           {editorMode ===
             "new-area-review" && (
@@ -4961,52 +5549,6 @@ export default function App() {
                     size={14}
                   />
                   Save Area
-                </button>
-              </div>
-            </div>
-          )}
-
-          {editorMode ===
-            "edit-area-shape" && (
-            <div className="floating-editor-panel">
-              <strong>
-                Edit{" "}
-                {
-                  selectedArea
-                    ?.label
-                }
-              </strong>
-
-              <p>
-                Corners do not need to be 90°. Make a triangle, clipped corner, or any polygon that matches the property.
-              </p>
-
-              <div className="floating-actions">
-                <button
-                  type="button"
-                  className="secondary-action"
-                  onClick={
-                    cancelAreaShapeEdit
-                  }
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  className="primary-action"
-                  disabled={
-                    saving ||
-                    !pendingAreaGeometry
-                  }
-                  onClick={
-                    saveAreaShape
-                  }
-                >
-                  <Save
-                    size={14}
-                  />
-                  Save Shape
                 </button>
               </div>
             </div>
@@ -6166,6 +6708,80 @@ export default function App() {
                             ? "Save Plot Settings"
                             : "Save Plot Name"}
                         </button>
+
+
+                        {canEditCore && (
+                          <div className="single-plot-delete-v181">
+                            {confirmingSingleDeleteId !==
+                            selectedPlot.id ? (
+                              <button
+                                type="button"
+                                className="single-plot-delete-button-v181"
+                                disabled={
+                                  saving
+                                }
+                                onClick={() =>
+                                  setConfirmingSingleDeleteId(
+                                    selectedPlot.id
+                                  )
+                                }
+                              >
+                                <Trash2
+                                  size={13}
+                                />
+                                Delete This Plot
+                              </button>
+                            ) : (
+                              <div className="single-plot-delete-confirm-v181">
+                                <strong>
+                                  Permanently delete Plot{" "}
+                                  {selectedPlot.plot_number}?
+                                </strong>
+
+                                <span>
+                                  {selectedPlot.burials.length > 0
+                                    ? `Warning: this plot has ${selectedPlot.burials.length} linked burial record${selectedPlot.burials.length === 1 ? "" : "s"}. Deleting the plot also removes those plot-to-person burial links.`
+                                    : "This plot has no linked burial records."}
+                                </span>
+
+                                <div>
+                                  <button
+                                    type="button"
+                                    className="secondary-action"
+                                    disabled={
+                                      saving
+                                    }
+                                    onClick={() =>
+                                      setConfirmingSingleDeleteId(
+                                        null
+                                      )
+                                    }
+                                  >
+                                    Cancel
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="single-plot-delete-confirm-button-v181"
+                                    disabled={
+                                      saving
+                                    }
+                                    onClick={() =>
+                                      void deleteCurrentPlot()
+                                    }
+                                  >
+                                    <Trash2
+                                      size={13}
+                                    />
+                                    {saving
+                                      ? "Deleting…"
+                                      : "Yes, Delete Plot"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <dl>

@@ -24,6 +24,8 @@ export type InstanceAdminSettings = {
   public_kiosk_enabled: boolean;
   public_show_available_plots: boolean;
   recovery_owner_user_id: string | null;
+  platform_recovery_user_id: string | null;
+  admin_nav_order: string[];
   installed_at: string;
   updated_at: string;
 };

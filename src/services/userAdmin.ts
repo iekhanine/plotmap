@@ -26,47 +26,21 @@ type InvokeResult<T> = {
 
 
 async function getAccessToken() {
-  let sessionResponse =
-    await supabase.auth.getSession();
+  const response =
+    await supabase.auth
+      .getSession();
 
-  if (sessionResponse.error) {
-    throw sessionResponse.error;
+  if (response.error) {
+    throw response.error;
   }
 
-  let session =
-    sessionResponse.data.session;
+  const session =
+    response.data.session;
 
   if (!session) {
     throw new Error(
-      "Your PlotMap session has expired. Sign in again."
+      "Your PlotMap session is not available. Sign out and sign in again."
     );
-  }
-
-  const expiresAt =
-    session.expires_at
-      ? session.expires_at * 1000
-      : null;
-
-  if (
-    expiresAt &&
-    expiresAt <
-      Date.now() + 60_000
-  ) {
-    const refreshResponse =
-      await supabase.auth.refreshSession();
-
-    if (refreshResponse.error) {
-      throw refreshResponse.error;
-    }
-
-    session =
-      refreshResponse.data.session;
-
-    if (!session) {
-      throw new Error(
-        "Your PlotMap session could not be refreshed. Sign in again."
-      );
-    }
   }
 
   return session.access_token;
@@ -128,7 +102,7 @@ async function edgeFunctionErrorMessage(
           return text.trim();
         }
       } catch {
-        // Use the original Functions error below.
+        // Use fallback.
       }
     }
   }
@@ -164,11 +138,10 @@ async function invoke<T>(
   }
 
   const result =
-    response.data as InvokeResult<T>;
+    response.data as
+      InvokeResult<T>;
 
-  if (
-    result?.error
-  ) {
+  if (result?.error) {
     throw new Error(
       result.error
     );
@@ -199,7 +172,10 @@ export async function createManagedUser(input: {
   email: string;
   password: string;
   displayName: string;
-  role: "manager" | "user";
+  role:
+    | "recovery_owner"
+    | "manager"
+    | "user";
   canEditPlotNames: boolean;
 }) {
   return invoke<ManagedUser>({
@@ -224,10 +200,26 @@ export async function updateManagedUser(input: {
 }
 
 
+export async function updateManagedIdentity(input: {
+  memberId: string;
+  displayName: string;
+  email?: string;
+  password?: string;
+}) {
+  return invoke<ManagedUser>({
+    action:
+      "update_identity",
+    ...input,
+  });
+}
+
+
 export async function deleteManagedUser(
   memberId: string,
 ) {
-  return invoke<{ deleted: boolean }>({
+  return invoke<{
+    deleted: boolean;
+  }>({
     action:
       "delete",
     memberId,

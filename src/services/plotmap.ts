@@ -449,19 +449,58 @@ export async function createMapArea(
 
 /* ==========================================================
    SERVICE 005
-   Rename an existing Plot Area
+   Save one Plot Area / Zone
+
+   One database UPDATE can save:
+   - label only
+   - geometry only
+   - label + geometry together
    ========================================================== */
 
-export async function updateMapAreaLabel(
+export async function updateMapAreaChanges(
   areaId: string,
-  label: string
+  changes: {
+    label?: string;
+    geometry?: MapAreaGeometry;
+  }
 ): Promise<void> {
+  const update: {
+    label?: string;
+    geometry?: MapAreaGeometry;
+  } = {};
+
+  if (
+    changes.label !==
+    undefined
+  ) {
+    update.label =
+      changes.label;
+  }
+
+  if (
+    changes.geometry !==
+    undefined
+  ) {
+    update.geometry =
+      changes.geometry;
+  }
+
+  if (
+    Object.keys(
+      update
+    ).length === 0
+  ) {
+    return;
+  }
+
   const response =
     await supabase
-      .from("pm_map_features")
-      .update({
-        label,
-      })
+      .from(
+        "pm_map_features"
+      )
+      .update(
+        update
+      )
       .eq(
         "id",
         areaId
@@ -474,28 +513,62 @@ export async function updateMapAreaLabel(
 
 
 /* ==========================================================
-   SERVICE 006
-   Save arbitrary polygon geometry
+   SERVICE 006B
+   Delete one Plot Area / Zone
+
+   The server RPC unassigns any plots from the Zone before
+   deleting the map feature. Plot records are preserved.
    ========================================================== */
 
-export async function updateMapAreaGeometry(
-  areaId: string,
-  geometry: MapAreaGeometry
-): Promise<void> {
+export type DeleteMapAreaResult = {
+  deleted: boolean;
+  unassignedPlots: number;
+};
+
+export async function deleteMapArea(
+  areaId: string
+): Promise<DeleteMapAreaResult> {
   const response =
-    await supabase
-      .from("pm_map_features")
-      .update({
-        geometry,
-      })
-      .eq(
-        "id",
-        areaId
-      );
+    await supabase.rpc(
+      "pm_delete_plot_area",
+      {
+        p_area_id:
+          areaId,
+      }
+    );
 
   if (response.error) {
     throw response.error;
   }
+
+  const data =
+    response.data as
+      | {
+          deleted?:
+            boolean;
+          unassigned_plots?:
+            number;
+        }
+      | null;
+
+  if (
+    !data?.deleted
+  ) {
+    throw new Error(
+      "Zone deletion could not be verified."
+    );
+  }
+
+  return {
+    deleted:
+      true,
+
+    unassignedPlots:
+      Number(
+        data.unassigned_plots ||
+        0
+      ),
+  };
 }
 
 

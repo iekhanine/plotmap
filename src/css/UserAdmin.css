@@ -743,3 +743,63 @@
     justify-content: flex-end;
   }
 }
+
+
+/* ==========================================================
+   USER ADMIN V18
+   Client owner identities + protected platform recovery
+   ========================================================== */
+
+.special-account-strip-v18 {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.recovery-owner-card.platform {
+  border-color: #d6dce1;
+  background: #f7f9fa;
+}
+
+.recovery-owner-card.platform svg {
+  color: #5b6871;
+}
+
+.role-badge.platform_recovery {
+  border-color: #cbd3d8;
+  background: #edf1f3;
+  color: #53616a;
+}
+
+.identity-fields-v18 input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ccd6db;
+  border-radius: 5px;
+  padding: 7px 8px;
+  background: white;
+  color: #1a2730;
+  font-size: 11px;
+}
+
+.identity-fields-v18 input:disabled {
+  background: #eef2f4;
+  color: #7a878f;
+}
+
+.protected-account-note-v18 {
+  color: #74828a;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .special-account-strip-v18 {
+    grid-template-columns: 1fr;
+  }
+}

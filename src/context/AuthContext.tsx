@@ -26,6 +26,7 @@ import {
 export type PlotMapRole =
   | "owner"
   | "recovery_owner"
+  | "platform_recovery"
   | "manager"
   | "user";
 
@@ -477,7 +478,9 @@ export function AuthProvider({
       const isOwner =
         role === "owner" ||
         role ===
-          "recovery_owner";
+          "recovery_owner" ||
+        role ===
+          "platform_recovery";
 
       const canEditCore =
         isOwner ||

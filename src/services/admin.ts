@@ -27,7 +27,7 @@ export async function loadAdminSettings(): Promise<AdminSettingsBundle> {
         "pm_instance_settings"
       )
       .select(
-        "id, organization_id, cemetery_id, instance_name, header_subtitle, demo_enabled, public_portal_enabled, public_portal_title, public_portal_subtitle, public_contact_email, public_contact_phone, public_allow_corrections, public_show_birth_date, public_show_death_date, public_show_biography, public_show_obituary, public_show_plot_location, public_kiosk_enabled, public_show_available_plots, recovery_owner_user_id, installed_at, updated_at"
+        "id, organization_id, cemetery_id, instance_name, header_subtitle, demo_enabled, public_portal_enabled, public_portal_title, public_portal_subtitle, public_contact_email, public_contact_phone, public_allow_corrections, public_show_birth_date, public_show_death_date, public_show_biography, public_show_obituary, public_show_plot_location, public_kiosk_enabled, public_show_available_plots, recovery_owner_user_id, platform_recovery_user_id, admin_nav_order, installed_at, updated_at"
       )
       .order(
         "installed_at",
@@ -532,68 +532,149 @@ export async function updatePublicCorrection(input: {
    Audit history
    ========================================================== */
 
-export async function loadAuditLog(): Promise<AuditRecord[]> {
-  const [
-    auditResponse,
-    memberResponse,
-  ] =
-    await Promise.all([
-      supabase
-        .from(
-          "pm_audit_log"
-        )
-        .select(
-          "id, organization_id, user_id, action, entity_type, entity_id, details, created_at"
-        )
-        .order(
-          "created_at",
-          {
-            ascending: false,
-          }
-        )
-        .limit(500),
-      supabase
-        .from(
-          "pm_members"
-        )
-        .select(
-          "user_id, display_name, role"
-        ),
-    ]);
-
-  if (auditResponse.error) {
-    throw auditResponse.error;
-  }
-
-  if (memberResponse.error) {
-    throw memberResponse.error;
-  }
+async function enrichAuditRows(
+  auditRows: any[]
+): Promise<AuditRecord[]> {
+  const members =
+    await readAll(
+      "pm_members"
+    );
 
   const actorById =
     new Map(
-      (memberResponse.data || [])
-        .map(
-          (member: any) => [
-            member.user_id,
-            member.display_name ||
-              member.role,
-          ]
-        )
+      members.map(
+        (member: any) => [
+          member.user_id,
+          member.display_name ||
+            member.role,
+        ]
+      )
     );
 
-  return (
-    auditResponse.data || []
-  ).map(
+  return auditRows.map(
     (row: any) => ({
       ...row,
       actorName:
         row.user_id
           ? actorById.get(
               row.user_id
-            ) || "Staff account"
+            ) ||
+            "Staff account"
           : "Public / system",
     })
   ) as AuditRecord[];
+}
+
+
+export async function loadAuditLog(): Promise<AuditRecord[]> {
+  const response =
+    await supabase
+      .from(
+        "pm_audit_log"
+      )
+      .select(
+        "id, organization_id, user_id, action, entity_type, entity_id, details, created_at"
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false,
+        }
+      )
+      .limit(500);
+
+  if (response.error) {
+    throw response.error;
+  }
+
+  return enrichAuditRows(
+    response.data ||
+    []
+  );
+}
+
+
+export async function loadFullAuditLog(): Promise<AuditRecord[]> {
+  const rows =
+    await readAll(
+      "pm_audit_log"
+    );
+
+  rows.sort(
+    (
+      a: any,
+      b: any
+    ) =>
+      String(
+        a.created_at
+      ).localeCompare(
+        String(
+          b.created_at
+        )
+      )
+  );
+
+  return enrichAuditRows(
+    rows
+  );
+}
+
+
+export async function downloadFullAuditLogCsv(): Promise<void> {
+  const rows =
+    await loadFullAuditLog();
+
+  const header = [
+    "Timestamp",
+    "Account",
+    "User ID",
+    "Action",
+    "Record Type",
+    "Record ID",
+    "Details JSON",
+  ];
+
+  const data =
+    rows.map(
+      (row) => [
+        row.created_at,
+        row.actorName ||
+          "",
+        row.user_id ||
+          "",
+        row.action,
+        row.entity_type,
+        row.entity_id ||
+          "",
+        JSON.stringify(
+          row.details ||
+          {}
+        ),
+      ]
+    );
+
+  const csv =
+    [
+      header,
+      ...data,
+    ]
+      .map(
+        (row) =>
+          row
+            .map(
+              csvCell
+            )
+            .join(",")
+      )
+      .join("\r\n");
+
+  downloadBlob(
+    `plotmap-full-audit-log-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`,
+    csv,
+    "text/csv;charset=utf-8"
+  );
 }
 
 
@@ -767,16 +848,51 @@ function downloadBlob(
 async function readAll(
   table: string
 ) {
-  const response =
-    await supabase
-      .from(table)
-      .select("*");
+  const pageSize =
+    1000;
 
-  if (response.error) {
-    throw response.error;
+  const rows:
+    any[] = [];
+
+  let offset =
+    0;
+
+  while (true) {
+    const response =
+      await supabase
+        .from(table)
+        .select("*")
+        .range(
+          offset,
+          offset +
+            pageSize -
+            1
+        );
+
+    if (response.error) {
+      throw response.error;
+    }
+
+    const page =
+      response.data ||
+      [];
+
+    rows.push(
+      ...page
+    );
+
+    if (
+      page.length <
+      pageSize
+    ) {
+      break;
+    }
+
+    offset +=
+      pageSize;
   }
 
-  return response.data || [];
+  return rows;
 }
 
 
@@ -798,6 +914,7 @@ export async function downloadFullBackup(): Promise<void> {
     "pm_documents",
     "pm_public_corrections",
     "pm_field_verifications",
+    "pm_field_submissions",
     "pm_audit_log",
   ];
 
@@ -817,7 +934,7 @@ export async function downloadFullBackup(): Promise<void> {
     format:
       "plotmap-backup",
     version:
-      "0.16.0",
+      "0.18.0",
     exportedAt:
       new Date().toISOString(),
     tables:
