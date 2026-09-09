@@ -1018,6 +1018,10 @@ export default function UserAdminPage() {
             <div className="account-empty">
               Loading accounts…
             </div>
+          ) : error ? (
+            <div className="account-empty">
+              Accounts could not be loaded. The error above is the server response.
+            </div>
           ) : filteredUsers.length === 0 ? (
             <div className="account-empty">
               No accounts match the current filters.

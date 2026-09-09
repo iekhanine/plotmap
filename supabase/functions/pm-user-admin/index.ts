@@ -80,10 +80,6 @@ Deno.serve(
         "SUPABASE_URL"
       );
 
-    const anonKey =
-      Deno.env.get(
-        "SUPABASE_ANON_KEY"
-      );
 
     const serviceRoleKey =
       Deno.env.get(
@@ -92,7 +88,6 @@ Deno.serve(
 
     if (
       !supabaseUrl ||
-      !anonKey ||
       !serviceRoleKey
     ) {
       return json(
@@ -119,23 +114,6 @@ Deno.serve(
       );
     }
 
-    const userClient =
-      createClient(
-        supabaseUrl,
-        anonKey,
-        {
-          global: {
-            headers: {
-              Authorization:
-                authorization,
-            },
-          },
-          auth: {
-            persistSession:
-              false,
-          },
-        }
-      );
 
     const service =
       createClient(
@@ -152,8 +130,26 @@ Deno.serve(
       );
 
     try {
+      const accessToken =
+        authorization.replace(
+          /^Bearer\s+/i,
+          ""
+        );
+
+      if (!accessToken) {
+        return json(
+          {
+            error:
+              "Authentication token is missing.",
+          },
+          401
+        );
+      }
+
       const userResponse =
-        await userClient.auth.getUser();
+        await service.auth.getUser(
+          accessToken
+        );
 
       if (
         userResponse.error ||
@@ -162,7 +158,8 @@ Deno.serve(
         return json(
           {
             error:
-              "Invalid PlotMap session.",
+              userResponse.error?.message ||
+              "Invalid or expired PlotMap session.",
           },
           401
         );
@@ -302,42 +299,57 @@ Deno.serve(
           throw membersResponse.error;
         }
 
-        const result =
-          await Promise.all(
-            (
-              membersResponse.data ||
-              []
-            ).map(
-              async (member) => {
-                const authResponse =
-                  await service.auth.admin.getUserById(
-                    member.user_id
-                  );
+        const authListResponse =
+          await service.auth.admin.listUsers({
+            page: 1,
+            perPage: 1000,
+          });
 
-                return {
-                  memberId:
-                    member.id,
-                  userId:
-                    member.user_id,
-                  email:
-                    authResponse.data.user?.email ||
-                    "",
-                  displayName:
-                    member.display_name,
-                  role:
-                    member.role,
-                  active:
-                    member.active,
-                  canEditPlotNames:
-                    Boolean(
-                      member.permissions
-                        ?.can_edit_plot_names
-                    ),
-                  createdAt:
-                    member.created_at,
-                };
-              }
+        if (
+          authListResponse.error
+        ) {
+          throw authListResponse.error;
+        }
+
+        const emailByUserId =
+          new Map(
+            authListResponse.data.users.map(
+              (user) => [
+                user.id,
+                user.email || "",
+              ]
             )
+          );
+
+        const result =
+          (
+            membersResponse.data ||
+            []
+          ).map(
+            (member) => ({
+              memberId:
+                member.id,
+              userId:
+                member.user_id,
+              email:
+                emailByUserId.get(
+                  member.user_id
+                ) ||
+                "",
+              displayName:
+                member.display_name,
+              role:
+                member.role,
+              active:
+                member.active,
+              canEditPlotNames:
+                Boolean(
+                  member.permissions
+                    ?.can_edit_plot_names
+                ),
+              createdAt:
+                member.created_at,
+            })
           );
 
         return json({
