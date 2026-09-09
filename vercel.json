@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/racine-gis/:path*",
+      "destination": "https://gis.cityofracine.org/:path*"
+    }
+  ]
+}
