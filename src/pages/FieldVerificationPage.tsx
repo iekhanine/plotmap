@@ -567,13 +567,6 @@ export default function FieldVerificationPage() {
       return;
     }
 
-    if (!photo) {
-      setError(
-        "Take or attach a grave-site photo before submitting."
-      );
-      return;
-    }
-
     try {
       setBusy(true);
       setError(null);
@@ -1024,7 +1017,7 @@ export default function FieldVerificationPage() {
                   Take grave-site photo
                 </strong>
                 <span>
-                  Uses the rear camera when supported.
+                  Optional, but recommended. Uses the rear camera when supported.
                 </span>
 
                 <input
@@ -1111,8 +1104,7 @@ export default function FieldVerificationPage() {
               type="button"
               className="field-submit-v17"
               disabled={
-                busy ||
-                !photo
+                busy
               }
               onClick={() =>
                 void submit()

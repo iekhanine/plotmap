@@ -32,44 +32,49 @@ export async function submitFieldVerification(input: {
   accuracyMeters: number | null;
 
   notes: string;
-  photo: File;
+  photo: File | null;
 }): Promise<string> {
-  const extension =
-    (
-      input.photo.name
-        .split(".")
-        .pop() ||
-      "jpg"
-    )
-      .toLowerCase()
-      .replace(
-        /[^a-z0-9]/g,
-        ""
-      ) || "jpg";
+  let storagePath: string | null =
+    null;
 
-  const token =
-    crypto.randomUUID();
+  if (input.photo) {
+    const extension =
+      (
+        input.photo.name
+          .split(".")
+          .pop() ||
+        "jpg"
+      )
+        .toLowerCase()
+        .replace(
+          /[^a-z0-9]/g,
+          ""
+        ) || "jpg";
 
-  const storagePath =
-    `${input.organizationId}/cemeteries/${input.cemeteryId}/field-submissions/${token}.${extension}`;
+    const token =
+      crypto.randomUUID();
 
-  const upload =
-    await supabase.storage
-      .from("plotmap-private")
-      .upload(
-        storagePath,
-        input.photo,
-        {
-          cacheControl: "3600",
-          upsert: false,
-          contentType:
-            input.photo.type ||
-            undefined,
-        }
-      );
+    storagePath =
+      `${input.organizationId}/cemeteries/${input.cemeteryId}/field-submissions/${token}.${extension}`;
 
-  if (upload.error) {
-    throw upload.error;
+    const upload =
+      await supabase.storage
+        .from("plotmap-private")
+        .upload(
+          storagePath,
+          input.photo,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType:
+              input.photo.type ||
+              undefined,
+          }
+        );
+
+    if (upload.error) {
+      throw upload.error;
+    }
   }
 
   const birthYear =
@@ -145,11 +150,14 @@ export async function submitFieldVerification(input: {
             input.accuracyMeters,
 
           photo_bucket:
-            "plotmap-private",
+            input.photo
+              ? "plotmap-private"
+              : null,
           photo_path:
             storagePath,
           photo_original_name:
-            input.photo.name,
+            input.photo?.name ||
+            null,
 
           notes:
             input.notes.trim() ||
@@ -167,11 +175,13 @@ export async function submitFieldVerification(input: {
 
     return response.data.id;
   } catch (error) {
-    await supabase.storage
-      .from("plotmap-private")
-      .remove([
-        storagePath,
-      ]);
+    if (storagePath) {
+      await supabase.storage
+        .from("plotmap-private")
+        .remove([
+          storagePath,
+        ]);
+    }
 
     throw error;
   }
