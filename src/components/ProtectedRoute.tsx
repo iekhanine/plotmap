@@ -56,7 +56,7 @@ export default function ProtectedRoute({
   if (!session) {
     return (
       <Navigate
-        to="/login"
+        to="/#staff-access"
         replace
       />
     );

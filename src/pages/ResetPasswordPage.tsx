@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
       );
 
       navigate(
-        "/",
+        "/staff",
         {
           replace: true,
         }

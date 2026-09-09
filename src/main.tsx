@@ -1,5 +1,6 @@
 import {
   StrictMode,
+  type ReactNode,
 } from "react";
 
 import {
@@ -24,9 +25,31 @@ import {
   AuthProvider,
 } from "./context/AuthContext";
 
+import AdminAuditPage from "./pages/AdminAuditPage";
+import AdminCemeterySettingsPage from "./pages/AdminCemeterySettingsPage";
+import AdminExportPage from "./pages/AdminExportPage";
+import AdminOverviewPage from "./pages/AdminOverviewPage";
+import AdminPublicSettingsPage from "./pages/AdminPublicSettingsPage";
+import AdminRequestsPage from "./pages/AdminRequestsPage";
 import LoginPage from "./pages/LoginPage";
+import PublicSearchPage from "./pages/PublicSearchPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import UserAdminPage from "./pages/UserAdminPage";
+
+
+function AdminRoute({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <ProtectedRoute
+      requireUserAdmin
+    >
+      {children}
+    </ProtectedRoute>
+  );
+}
 
 
 createRoot(
@@ -41,7 +64,10 @@ createRoot(
           <Route
             path="/login"
             element={
-              <LoginPage />
+              <Navigate
+                to="/#staff-access"
+                replace
+              />
             }
           />
 
@@ -53,18 +79,84 @@ createRoot(
           />
 
           <Route
+            path="/find"
+            element={
+              <PublicSearchPage />
+            }
+          />
+
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminOverviewPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route
             path="/admin/users"
             element={
-              <ProtectedRoute
-                requireUserAdmin
-              >
+              <AdminRoute>
                 <UserAdminPage />
-              </ProtectedRoute>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminRoute>
+                <AdminCemeterySettingsPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/public"
+            element={
+              <AdminRoute>
+                <AdminPublicSettingsPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/requests"
+            element={
+              <AdminRoute>
+                <AdminRequestsPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/audit"
+            element={
+              <AdminRoute>
+                <AdminAuditPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/export"
+            element={
+              <AdminRoute>
+                <AdminExportPage />
+              </AdminRoute>
             }
           />
 
           <Route
             path="/"
+            element={
+              <LoginPage />
+            }
+          />
+
+          <Route
+            path="/staff"
             element={
               <ProtectedRoute>
                 <App />

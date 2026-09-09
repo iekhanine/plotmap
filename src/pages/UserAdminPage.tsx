@@ -5,7 +5,6 @@ import {
 } from "react";
 
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronUp,
   Search,
@@ -16,9 +15,7 @@ import {
   Users,
 } from "lucide-react";
 
-import {
-  useNavigate,
-} from "react-router-dom";
+import AdminShell from "../components/AdminShell";
 
 import {
   useAuth,
@@ -90,9 +87,6 @@ function formatCreatedAt(
 
 
 export default function UserAdminPage() {
-  const navigate =
-    useNavigate();
-
   const {
     profile,
     isOwner,
@@ -623,36 +617,12 @@ export default function UserAdminPage() {
 
 
   return (
-    <div className="user-admin-shell">
-      <header className="user-admin-header">
-        <div>
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                "/"
-              )
-            }
-          >
-            <ArrowLeft
-              size={14}
-            />
-            PlotMap
-          </button>
-
-          <span>
-            ACCOUNT ADMINISTRATION
-          </span>
-        </div>
-
-        <small>
-          Signed in as{" "}
-          {profile?.displayName ||
-            profile?.email}
-        </small>
-      </header>
-
-      <main className="user-admin-main">
+    <AdminShell
+      eyebrow="ACCESS CONTROL"
+      title="Accounts & Permissions"
+      description="Create Managers and Users, keep the Recovery Owner protected, and grant the narrowest access each staff member needs."
+    >
+      <div className="user-admin-main v15-embedded">
         <section className="user-admin-intro-row">
           <div className="user-admin-intro">
             <span className="admin-eyebrow">
@@ -1356,7 +1326,7 @@ export default function UserAdminPage() {
             </div>
           )}
         </section>
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

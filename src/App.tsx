@@ -45,6 +45,8 @@ import {
   Crosshair,
   Database,
   Eye,
+  EyeOff,
+  Globe2,
   LoaderCircle,
   MapPin,
   MousePointerClick,
@@ -55,13 +57,25 @@ import {
   Shapes,
   Trash2,
   CheckSquare,
+  LocateFixed,
   LogOut,
+  ShieldCheck,
   Undo2,
   UserCog,
   X,
 } from "lucide-react";
 
 import "./App.css";
+
+import {
+  captureFieldVerification,
+  getLatestFieldVerification,
+  updatePersonVerification,
+} from "./services/admin";
+
+import {
+  loadPublicPortalConfig,
+} from "./services/publicPortal";
 
 import {
   plotMapConfig,
@@ -85,7 +99,12 @@ import {
   updatePlotDetails,
   updatePlotPlacement,
   savePlotPersonInfo,
+  setPlotPersonPublicVisibility,
 } from "./services/plotmap";
+
+import type {
+  FieldVerificationRecord,
+} from "./types/admin";
 
 import type {
   MapAreaGeometry,
@@ -241,6 +260,36 @@ function plotCoordinate(
       plot.y ?? 0
     )
   );
+}
+
+
+function distanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) {
+  const earthRadius = 6371000;
+  const toRadians =
+    (value: number) =>
+      value * Math.PI / 180;
+
+  const dLat =
+    toRadians(lat2 - lat1);
+  const dLon =
+    toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+
+  return 2 * earthRadius *
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
+    );
 }
 
 
@@ -663,10 +712,12 @@ export default function App() {
     useNavigate();
 
   const {
+    user,
     profile,
     demoMode,
     canEditCore,
     canManageUsers,
+    isOwner,
     canEditPlotNames,
     signOut,
   } = useAuth();
@@ -916,11 +967,63 @@ export default function App() {
       null
     );
 
+  const [
+    headerSubtitle,
+    setHeaderSubtitle,
+  ] = useState(
+    "Cemetery Mapping & Records"
+  );
+
+  const [
+    publicSearchEnabled,
+    setPublicSearchEnabled,
+  ] = useState(true);
+
+  const [
+    latestFieldVerification,
+    setLatestFieldVerification,
+  ] = useState<FieldVerificationRecord | null>(
+    null
+  );
+
+  const [
+    verificationBusy,
+    setVerificationBusy,
+  ] = useState(false);
+
   const editorPanelDrag =
     usePanelDrag();
 
   const detailsPanelDrag =
     usePanelDrag();
+
+
+  useEffect(() => {
+    let active = true;
+
+    void loadPublicPortalConfig()
+      .then((config) => {
+        if (!active) {
+          return;
+        }
+
+        setHeaderSubtitle(
+          config.headerSubtitle ||
+          "Cemetery Mapping & Records"
+        );
+
+        setPublicSearchEnabled(
+          config.publicEnabled
+        );
+      })
+      .catch(() => {
+        // Staff map must remain usable even if branding lookup fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   /* ========================================================
@@ -1106,6 +1209,22 @@ export default function App() {
         primary?.person.notes ||
         "",
 
+      verificationStatus:
+        primary?.person.verification_status ||
+        "unverified",
+
+      verificationNotes:
+        primary?.person.verification_notes ||
+        "",
+
+      publicVisible:
+        primary?.person.public_visible ??
+        true,
+
+      publicVisibilityNote:
+        primary?.person.public_visibility_note ||
+        "",
+
       burialDate:
         primary?.burial.burial_date ||
         "",
@@ -1127,6 +1246,48 @@ export default function App() {
     selectedPlot?.plot_type,
     selectedPlot?.notes,
     selectedPlot?.burials,
+  ]);
+
+
+  useEffect(() => {
+    let active = true;
+
+    if (
+      !selectedPlot ||
+      !canEditCore
+    ) {
+      setLatestFieldVerification(
+        null
+      );
+      return () => {
+        active = false;
+      };
+    }
+
+    void getLatestFieldVerification(
+      selectedPlot.id
+    )
+      .then((record) => {
+        if (active) {
+          setLatestFieldVerification(
+            record
+          );
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLatestFieldVerification(
+            null
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    selectedPlot?.id,
+    canEditCore,
   ]);
 
 
@@ -3535,10 +3696,30 @@ export default function App() {
         true
       );
 
-      await savePlotPersonInfo(
-        selectedPlot.id,
-        personEditDraft
-      );
+      const savedPersonId =
+        await savePlotPersonInfo(
+          selectedPlot.id,
+          personEditDraft
+        );
+
+      await updatePersonVerification({
+        personId:
+          savedPersonId,
+        status:
+          personEditDraft.verificationStatus,
+        notes:
+          personEditDraft.verificationNotes,
+        userId:
+          user?.id || null,
+      });
+
+      if (isOwner) {
+        await setPlotPersonPublicVisibility(
+          savedPersonId,
+          personEditDraft.publicVisible,
+          personEditDraft.publicVisibilityNote
+        );
+      }
 
       const refreshed =
         await loadPlotMapDataset(
@@ -3605,6 +3786,22 @@ export default function App() {
             primary?.person.notes ||
             "",
 
+          verificationStatus:
+            primary?.person.verification_status ||
+            "unverified",
+
+          verificationNotes:
+            primary?.person.verification_notes ||
+            "",
+
+          publicVisible:
+            primary?.person.public_visible ??
+            true,
+
+          publicVisibilityNote:
+            primary?.person.public_visibility_note ||
+            "",
+
           burialDate:
             primary?.burial.burial_date ||
             "",
@@ -3635,6 +3832,105 @@ export default function App() {
       );
     } finally {
       setSaving(
+        false
+      );
+    }
+  }
+
+
+  async function captureCurrentPlotVerification() {
+    if (
+      !selectedPlot ||
+      !dataset ||
+      !canEditCore
+    ) {
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setEditorMessage(
+        "This browser does not provide GPS / location access."
+      );
+      return;
+    }
+
+    try {
+      setVerificationBusy(
+        true
+      );
+
+      const position =
+        await new Promise<GeolocationPosition>(
+          (resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              resolve,
+              reject,
+              {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0,
+              }
+            );
+          }
+        );
+
+      const recorded =
+        await captureFieldVerification({
+          organizationId:
+            dataset.cemetery.organization_id,
+          cemeteryId:
+            dataset.cemetery.id,
+          plotId:
+            selectedPlot.id,
+          personId:
+            selectedPlot.burials[0]?.person.id ||
+            null,
+          userId:
+            user?.id || null,
+          latitude:
+            position.coords.latitude,
+          longitude:
+            position.coords.longitude,
+          accuracyMeters:
+            Number.isFinite(
+              position.coords.accuracy
+            )
+              ? position.coords.accuracy
+              : null,
+        });
+
+      setLatestFieldVerification(
+        recorded
+      );
+
+      if (
+        selectedPlot.latitude != null &&
+        selectedPlot.longitude != null
+      ) {
+        const delta =
+          distanceMeters(
+            Number(selectedPlot.latitude),
+            Number(selectedPlot.longitude),
+            position.coords.latitude,
+            position.coords.longitude
+          );
+
+        setEditorMessage(
+          `Field verification captured. Current GPS is about ${delta.toFixed(1)} m from the mapped plot point.`
+        );
+      } else {
+        setEditorMessage(
+          "Field verification captured. This plot does not yet have a mapped coordinate for comparison."
+        );
+      }
+    } catch (verificationError) {
+      setEditorMessage(
+        verificationError instanceof Error
+          ? verificationError.message
+          : "Could not capture the current GPS location."
+      );
+    } finally {
+      setVerificationBusy(
         false
       );
     }
@@ -3690,26 +3986,45 @@ export default function App() {
             </strong>
 
             <span>
-              Cemetery Mapping Prototype
+              {dataset?.cemetery.name || "Cemetery"}
+              {" · "}
+              {headerSubtitle}
             </span>
           </div>
         </div>
 
         <div className="plotmap-header-actions">
+          {publicSearchEnabled && (
+            <button
+              type="button"
+              className="header-admin-button"
+              onClick={() =>
+                navigate(
+                  "/find"
+                )
+              }
+            >
+              <Globe2
+                size={13}
+              />
+              Public Map
+            </button>
+          )}
+
           {canManageUsers && (
             <button
               type="button"
               className="header-admin-button"
               onClick={() =>
                 navigate(
-                  "/admin/users"
+                  "/admin"
                 )
               }
             >
               <UserCog
                 size={13}
               />
-              Accounts
+              Administration
             </button>
           )}
 
@@ -3740,7 +4055,7 @@ export default function App() {
 
             {imageryStatus ===
               "racine"
-              ? "Racine 2025 aerial"
+              ? "Local aerial"
               : imageryStatus ===
                   "fallback"
                 ? "Fallback aerial"
@@ -4899,6 +5214,18 @@ export default function App() {
                               )
                             : "—"}
                         </small>
+
+                        <span
+                          className={`record-confidence ${selectedPlot.burials[0].person.verification_status || "unverified"}`}
+                        >
+                          <ShieldCheck
+                            size={11}
+                          />
+                          {selectedPlot.burials[0].person.verification_status
+                            ?.replace("_", " ")
+                            .toUpperCase() ||
+                            "UNVERIFIED"}
+                        </span>
                       </div>
                     ) : (
                       <div className="empty-person">
@@ -5273,6 +5600,180 @@ export default function App() {
                           }
                         />
 
+                        {isOwner && (
+                          <div className={
+                            personEditDraft.publicVisible
+                              ? "public-visibility-box visible"
+                              : "public-visibility-box hidden"
+                          }>
+                            <div className="verification-box-title">
+                              {personEditDraft.publicVisible
+                                ? <Eye size={13} />
+                                : <EyeOff size={13} />}
+                              <strong>Public Access</strong>
+                            </div>
+
+                            <label className="public-visibility-toggle">
+                              <input
+                                type="checkbox"
+                                checked={personEditDraft.publicVisible}
+                                onChange={(event) =>
+                                  setPersonEditDraft(
+                                    (current) =>
+                                      current
+                                        ? {
+                                            ...current,
+                                            publicVisible: event.target.checked,
+                                          }
+                                        : current
+                                  )
+                                }
+                              />
+                              <span>Visible in public cemetery search and map</span>
+                            </label>
+
+                            <label>
+                              Internal privacy note
+                            </label>
+
+                            <textarea
+                              rows={2}
+                              value={personEditDraft.publicVisibilityNote}
+                              placeholder="Example: Family requested that this memorial remain private."
+                              onChange={(event) =>
+                                setPersonEditDraft(
+                                  (current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          publicVisibilityNote: event.target.value,
+                                        }
+                                      : current
+                                )
+                              }
+                            />
+
+                            <small className="public-visibility-help">
+                              Hiding a person removes them from public search, memorial links, and clickable public-map tombstones. Staff records are unchanged.
+                            </small>
+                          </div>
+                        )}
+
+                        <div className="record-verification-box">
+                          <div className="verification-box-title">
+                            <ShieldCheck
+                              size={13}
+                            />
+                            <strong>Record Confidence</strong>
+                          </div>
+
+                          <label>
+                            Verification status
+                          </label>
+
+                          <select
+                            value={
+                              personEditDraft
+                                .verificationStatus
+                            }
+                            onChange={
+                              (event) =>
+                                setPersonEditDraft(
+                                  (current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          verificationStatus:
+                                            event.target.value as PersonEditInput["verificationStatus"],
+                                        }
+                                      : current
+                                )
+                            }
+                          >
+                            <option value="unverified">
+                              Unverified
+                            </option>
+                            <option value="verified">
+                              Verified
+                            </option>
+                            <option value="needs_review">
+                              Needs Review
+                            </option>
+                            <option value="conflict">
+                              Conflicting Records
+                            </option>
+                            <option value="approximate">
+                              Approximate
+                            </option>
+                          </select>
+
+                          <label>
+                            Verification notes
+                          </label>
+
+                          <textarea
+                            rows={2}
+                            value={
+                              personEditDraft
+                                .verificationNotes
+                            }
+                            placeholder="Source checked, discrepancy, ledger reference…"
+                            onChange={
+                              (event) =>
+                                setPersonEditDraft(
+                                  (current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          verificationNotes:
+                                            event.target.value,
+                                        }
+                                      : current
+                                )
+                            }
+                          />
+                        </div>
+
+                        <div className="field-verification-box">
+                          <div className="verification-box-title">
+                            <LocateFixed
+                              size={13}
+                            />
+                            <strong>Field Verification</strong>
+                          </div>
+
+                          {latestFieldVerification ? (
+                            <small>
+                              Last GPS check: {new Date(latestFieldVerification.created_at).toLocaleString()}
+                              {latestFieldVerification.accuracy_meters != null
+                                ? ` · ±${Number(latestFieldVerification.accuracy_meters).toFixed(1)} m`
+                                : ""}
+                            </small>
+                          ) : (
+                            <small>
+                              No field verification has been captured for this plot yet.
+                            </small>
+                          )}
+
+                          <button
+                            type="button"
+                            className="secondary-action full"
+                            disabled={
+                              verificationBusy
+                            }
+                            onClick={() =>
+                              void captureCurrentPlotVerification()
+                            }
+                          >
+                            <LocateFixed
+                              size={13}
+                            />
+                            {verificationBusy
+                              ? "Reading GPS…"
+                              : "Verify at Current GPS"}
+                          </button>
+                        </div>
+
                         <button
                           type="button"
                           className="primary-action full"
@@ -5349,6 +5850,20 @@ export default function App() {
                               .burial
                               .burial_date ||
                               "—"}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt>
+                            Confidence
+                          </dt>
+                          <dd>
+                            {selectedPlot
+                              .burials[0]
+                              .person
+                              .verification_status
+                              ?.replace("_", " ") ||
+                              "unverified"}
                           </dd>
                         </div>
                       </dl>

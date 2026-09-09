@@ -57,6 +57,13 @@ export type PersonRecord = {
   obituary: string | null;
   biography: string | null;
   notes: string | null;
+  verification_status: "unverified" | "verified" | "needs_review" | "conflict" | "approximate";
+  verification_notes: string | null;
+  verified_at: string | null;
+  verified_by: string | null;
+  public_visible: boolean;
+  public_visibility_note: string | null;
+  public_visibility_updated_at: string | null;
 };
 
 export type BurialRecord = {
@@ -154,6 +161,12 @@ export type PersonEditInput = {
   obituary: string;
   biography: string;
   personNotes: string;
+
+  verificationStatus: "unverified" | "verified" | "needs_review" | "conflict" | "approximate";
+  verificationNotes: string;
+
+  publicVisible: boolean;
+  publicVisibilityNote: string;
 
   burialDate: string;
   intermentType: string;

@@ -182,7 +182,7 @@ export async function loadPlotMapDataset(
       await supabase
         .from("pm_people")
         .select(
-          "id, first_name, middle_name, last_name, suffix, birth_date, death_date, obituary, biography, notes"
+          "id, first_name, middle_name, last_name, suffix, birth_date, death_date, obituary, biography, notes, verification_status, verification_notes, verified_at, verified_by, public_visible, public_visibility_note, public_visibility_updated_at"
         )
         .in(
           "id",
@@ -824,3 +824,29 @@ export function getYear(
     4
   );
 }
+
+/* ==========================================================
+   SERVICE 012
+   Owner-only per-person public visibility
+   ========================================================== */
+
+export async function setPlotPersonPublicVisibility(
+  personId: string,
+  visible: boolean,
+  note: string
+): Promise<void> {
+  const response =
+    await supabase.rpc(
+      "pm_set_person_public_visibility",
+      {
+        p_person_id: personId,
+        p_visible: visible,
+        p_note: note.trim() || null,
+      }
+    );
+
+  if (response.error) {
+    throw response.error;
+  }
+}
+

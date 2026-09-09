@@ -1553,3 +1553,113 @@ button:disabled {
     left: 0;
   }
 }
+
+/* ==========================================================
+   APP V15
+   Record confidence + field verification
+   ========================================================== */
+
+.record-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 7px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(112, 124, 132, .12);
+  color: #8d9aa2;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+
+.record-confidence.verified {
+  background: rgba(42, 166, 92, .12);
+  color: #5ec884;
+}
+
+.record-confidence.needs_review,
+.record-confidence.approximate {
+  background: rgba(232, 164, 52, .12);
+  color: #e1ac57;
+}
+
+.record-confidence.conflict {
+  background: rgba(212, 73, 73, .13);
+  color: #df7777;
+}
+
+.record-verification-box,
+.field-verification-box {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 9px;
+  border: 1px solid #303b41;
+  border-radius: 5px;
+  background: rgba(255,255,255,.018);
+}
+
+.verification-box-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c4d0d5;
+  font-size: 8px;
+}
+
+.record-verification-box small,
+.field-verification-box small {
+  color: #7f8d94;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.plotmap-header .header-admin-button {
+  white-space: nowrap;
+}
+
+/* ==========================================================
+   APP V16
+   Owner-controlled public visibility per person
+   ========================================================== */
+
+.public-visibility-box {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 9px;
+  border: 1px solid #334149;
+  border-radius: 5px;
+  background: rgba(255,255,255,.018);
+}
+
+.public-visibility-box.visible {
+  border-color: rgba(55, 163, 105, .34);
+  background: rgba(55, 163, 105, .045);
+}
+
+.public-visibility-box.hidden {
+  border-color: rgba(210, 92, 92, .36);
+  background: rgba(210, 92, 92, .045);
+}
+
+.public-visibility-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 7px;
+  color: #aab7bd;
+  font-size: 8px;
+}
+
+.public-visibility-toggle input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+}
+
+.public-visibility-help {
+  color: #7f8d94;
+  font-size: 8px;
+  line-height: 1.45;
+}
