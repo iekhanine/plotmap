@@ -16,9 +16,11 @@ import "../css/Auth.css";
 export default function ProtectedRoute({
   children,
   requireUserAdmin = false,
+  requireCoreEditor = false,
 }: {
   children: ReactNode;
   requireUserAdmin?: boolean;
+  requireCoreEditor?: boolean;
 }) {
   const {
     session,
@@ -27,6 +29,7 @@ export default function ProtectedRoute({
     profileError,
     demoMode,
     canManageUsers,
+    canEditCore,
     signOut,
   } = useAuth();
 
@@ -100,6 +103,18 @@ export default function ProtectedRoute({
     return (
       <Navigate
         to="/"
+        replace
+      />
+    );
+  }
+
+  if (
+    requireCoreEditor &&
+    !canEditCore
+  ) {
+    return (
+      <Navigate
+        to="/staff"
         replace
       />
     );

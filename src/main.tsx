@@ -28,9 +28,11 @@ import {
 import AdminAuditPage from "./pages/AdminAuditPage";
 import AdminCemeterySettingsPage from "./pages/AdminCemeterySettingsPage";
 import AdminExportPage from "./pages/AdminExportPage";
+import AdminFieldVerificationsPage from "./pages/AdminFieldVerificationsPage";
 import AdminOverviewPage from "./pages/AdminOverviewPage";
 import AdminPublicSettingsPage from "./pages/AdminPublicSettingsPage";
 import AdminRequestsPage from "./pages/AdminRequestsPage";
+import FieldVerificationPage from "./pages/FieldVerificationPage";
 import LoginPage from "./pages/LoginPage";
 import PublicSearchPage from "./pages/PublicSearchPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -45,6 +47,21 @@ function AdminRoute({
   return (
     <ProtectedRoute
       requireUserAdmin
+    >
+      {children}
+    </ProtectedRoute>
+  );
+}
+
+
+function FieldRoute({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <ProtectedRoute
+      requireCoreEditor
     >
       {children}
     </ProtectedRoute>
@@ -122,6 +139,15 @@ createRoot(
           />
 
           <Route
+            path="/admin/verifications"
+            element={
+              <AdminRoute>
+                <AdminFieldVerificationsPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route
             path="/admin/requests"
             element={
               <AdminRoute>
@@ -152,6 +178,15 @@ createRoot(
             path="/"
             element={
               <LoginPage />
+            }
+          />
+
+          <Route
+            path="/field"
+            element={
+              <FieldRoute>
+                <FieldVerificationPage />
+              </FieldRoute>
             }
           />
 

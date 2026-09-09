@@ -119,8 +119,20 @@ export default function LoginPage() {
       session &&
       profile
     ) {
+      const fieldPreferred =
+        window.matchMedia(
+          "(max-width: 820px)"
+        ).matches &&
+        (
+          profile.role === "owner" ||
+          profile.role === "recovery_owner" ||
+          profile.role === "manager"
+        );
+
       navigate(
-        "/staff",
+        fieldPreferred
+          ? "/field"
+          : "/staff",
         {
           replace: true,
         }

@@ -4,6 +4,7 @@ import {
 } from "react";
 
 import {
+  ClipboardCheck,
   ClipboardList,
   Database,
   MapPin,
@@ -69,7 +70,7 @@ export default function AdminOverviewPage() {
     <AdminShell
       eyebrow="INSTANCE CONTROL"
       title="Administration"
-      description="One place for cemetery identity, staff access, public family search, requests, audit history, and customer-owned exports."
+      description="One place for memorial-site identity, staff access, public family search, field verification reviews, requests, audit history, and customer-owned exports."
     >
       {error && (
         <div className="admin-message-v15 error">
@@ -102,6 +103,11 @@ export default function AdminOverviewPage() {
           <span>Field checks</span>
           <strong>{stats?.fieldVerifications ?? "—"}</strong>
         </div>
+
+        <div className="admin-stat-v15">
+          <span>Pending field reviews</span>
+          <strong>{stats?.pendingFieldSubmissions ?? "—"}</strong>
+        </div>
       </section>
 
       <section className="admin-card-v15 admin-card-pad-v15">
@@ -119,6 +125,14 @@ export default function AdminOverviewPage() {
             <strong>Public Family Search</strong>
             <span>
               Control exactly what families can search, see, and submit without a login.
+            </span>
+          </Link>
+
+          <Link className="admin-export-card-v15" to="/admin/verifications">
+            <ClipboardCheck size={18} />
+            <strong>Field Verifications</strong>
+            <span>
+              Review mobile grave-site photos, GPS observations, plot numbers, and occupant confirmations before they become verified records.
             </span>
           </Link>
 

@@ -4031,6 +4031,23 @@ export default function App() {
           {canEditCore && (
             <button
               type="button"
+              className="header-admin-button"
+              onClick={() =>
+                navigate(
+                  "/field"
+                )
+              }
+            >
+              <LocateFixed
+                size={13}
+              />
+              Field Mode
+            </button>
+          )}
+
+          {canEditCore && (
+            <button
+              type="button"
               className={
                 editorOpen
                   ? "editor-toggle active"

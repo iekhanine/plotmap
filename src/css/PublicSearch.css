@@ -790,3 +790,99 @@
     justify-content: flex-start;
   }
 }
+
+
+/* ==========================================================
+   PUBLIC V17
+   Phone GPS walking guide
+   ========================================================== */
+
+.public-memorial-actions button.active {
+  border-color: #287ea6;
+  background: #eaf6fb;
+  color: #246883;
+}
+
+.public-guidance-v17 {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 11px 12px;
+  border: 1px solid #bcd7e4;
+  border-radius: 8px;
+  background: #f4fbfe;
+  color: #4f6874;
+}
+
+.public-guidance-head-v17 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #285e75;
+}
+
+.public-guidance-head-v17 strong {
+  font-size: 11px;
+}
+
+.public-guidance-v17 p,
+.public-guidance-v17 small {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.public-guidance-v17 p {
+  font-size: 10px;
+}
+
+.public-guidance-v17 small {
+  color: #728690;
+  font-size: 8px;
+}
+
+.public-guidance-error-v17 {
+  color: #963b3b;
+}
+
+.public-guidance-distance-v17 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.public-guidance-distance-v17 strong {
+  color: #183d4d;
+  font-size: 24px;
+}
+
+.public-guidance-distance-v17 span {
+  color: #607985;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .public-map-stage,
+  .public-map {
+    min-height: 360px;
+    height: 54vh;
+    max-height: 560px;
+  }
+
+  .public-memorial-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .public-memorial-actions button {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .public-guidance-distance-v17 {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1px;
+  }
+}

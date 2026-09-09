@@ -115,6 +115,7 @@ export type AdminOverviewStats = {
   people: number;
   pendingCorrections: number;
   fieldVerifications: number;
+  pendingFieldSubmissions: number;
 };
 
 

@@ -258,6 +258,7 @@ export async function loadAdminOverview(): Promise<AdminOverviewStats> {
     people,
     corrections,
     verifications,
+    pendingFieldSubmissions,
   ] =
     await Promise.all([
       supabase
@@ -305,6 +306,18 @@ export async function loadAdminOverview(): Promise<AdminOverviewStats> {
           count: "exact",
           head: true,
         }),
+      supabase
+        .from(
+          "pm_field_submissions"
+        )
+        .select("id", {
+          count: "exact",
+          head: true,
+        })
+        .eq(
+          "status",
+          "pending"
+        ),
     ]);
 
   for (
@@ -314,6 +327,7 @@ export async function loadAdminOverview(): Promise<AdminOverviewStats> {
       people,
       corrections,
       verifications,
+      pendingFieldSubmissions,
     ]
   ) {
     if (response.error) {
@@ -332,6 +346,8 @@ export async function loadAdminOverview(): Promise<AdminOverviewStats> {
       corrections.count || 0,
     fieldVerifications:
       verifications.count || 0,
+    pendingFieldSubmissions:
+      pendingFieldSubmissions.count || 0,
   };
 }
 

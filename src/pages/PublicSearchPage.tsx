@@ -10,6 +10,7 @@ import Feature from "ol/Feature.js";
 import OLMap from "ol/Map.js";
 import View from "ol/View.js";
 import Point from "ol/geom/Point.js";
+import LineString from "ol/geom/LineString.js";
 import Polygon from "ol/geom/Polygon.js";
 import ImageLayer from "ol/layer/Image.js";
 import TileLayer from "ol/layer/Tile.js";
@@ -247,12 +248,149 @@ function graveStyle(
 
 
 
+
+type VisitorPosition = {
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+};
+
+function visitorDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) {
+  const radius = 6371000;
+
+  const rad =
+    (value: number) =>
+      value *
+      Math.PI /
+      180;
+
+  const dLat =
+    rad(
+      lat2 - lat1
+    );
+
+  const dLon =
+    rad(
+      lon2 - lon1
+    );
+
+  const a =
+    Math.sin(
+      dLat / 2
+    ) ** 2 +
+    Math.cos(
+      rad(lat1)
+    ) *
+    Math.cos(
+      rad(lat2)
+    ) *
+    Math.sin(
+      dLon / 2
+    ) ** 2;
+
+  return (
+    radius *
+    2 *
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
+    )
+  );
+}
+
+function visitorBearing(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) {
+  const rad =
+    (value: number) =>
+      value *
+      Math.PI /
+      180;
+
+  const deg =
+    (value: number) =>
+      value *
+      180 /
+      Math.PI;
+
+  const y =
+    Math.sin(
+      rad(
+        lon2 - lon1
+      )
+    ) *
+    Math.cos(
+      rad(lat2)
+    );
+
+  const x =
+    Math.cos(
+      rad(lat1)
+    ) *
+    Math.sin(
+      rad(lat2)
+    ) -
+    Math.sin(
+      rad(lat1)
+    ) *
+    Math.cos(
+      rad(lat2)
+    ) *
+    Math.cos(
+      rad(
+        lon2 - lon1
+      )
+    );
+
+  return (
+    deg(
+      Math.atan2(
+        y,
+        x
+      )
+    ) +
+    360
+  ) % 360;
+}
+
+function bearingLabel(
+  bearing: number
+) {
+  const directions =
+    [
+      "N",
+      "NE",
+      "E",
+      "SE",
+      "S",
+      "SW",
+      "W",
+      "NW",
+    ];
+
+  return directions[
+    Math.round(
+      bearing / 45
+    ) % 8
+  ];
+}
+
+
 type PublicMapProps = {
   config: PublicPortalConfig;
   markers: PublicMapMarker[];
   availablePlots: PublicAvailablePlot[];
   mode: "people" | "available";
   selectedPlotId: string | null;
+  visitorPosition: VisitorPosition | null;
   onSelectMarker: (
     marker: PublicMapMarker
   ) => void;
@@ -265,6 +403,7 @@ function PublicCemeteryMap({
   availablePlots,
   mode,
   selectedPlotId,
+  visitorPosition,
   onSelectMarker,
 }: PublicMapProps) {
   const containerRef =
@@ -533,15 +672,20 @@ function PublicCemeteryMap({
       window.setTimeout(
         () => {
           try {
-            view.fit(
-              vectorSource.getExtent(),
-              {
-                padding:
-                  [52, 52, 52, 52],
-                maxZoom: 17.8,
-                duration: 0,
-              }
-            );
+            const extent =
+              vectorSource.getExtent();
+
+            if (extent) {
+              view.fit(
+                extent,
+                {
+                  padding:
+                    [52, 52, 52, 52],
+                  maxZoom: 17.8,
+                  duration: 0,
+                }
+              );
+            }
           } catch {
             // Keep configured center if an extent cannot be fitted.
           }
@@ -677,6 +821,161 @@ function PublicCemeteryMap({
     selectedPlotId,
   ]);
 
+
+  useEffect(() => {
+    const source =
+      vectorSourceRef.current;
+
+    if (!source) {
+      return;
+    }
+
+    const oldVisitor =
+      source.getFeatureById(
+        "visitor-location"
+      );
+
+    if (oldVisitor) {
+      source.removeFeature(
+        oldVisitor
+      );
+    }
+
+    const oldGuide =
+      source.getFeatureById(
+        "visitor-guide-line"
+      );
+
+    if (oldGuide) {
+      source.removeFeature(
+        oldGuide
+      );
+    }
+
+    if (!visitorPosition) {
+      return;
+    }
+
+    const visitorCoordinate =
+      fromLonLat([
+        visitorPosition.longitude,
+        visitorPosition.latitude,
+      ]);
+
+    const visitor =
+      new Feature({
+        geometry:
+          new Point(
+            visitorCoordinate
+          ),
+      });
+
+    visitor.setId(
+      "visitor-location"
+    );
+
+    visitor.set(
+      "kind",
+      "visitor-location"
+    );
+
+    visitor.setStyle([
+      new Style({
+        image:
+          new CircleStyle({
+            radius: 12,
+            fill:
+              new Fill({
+                color:
+                  "rgba(20, 94, 144, .18)",
+              }),
+          }),
+      }),
+      new Style({
+        image:
+          new CircleStyle({
+            radius: 5,
+            fill:
+              new Fill({
+                color:
+                  "#145f91",
+              }),
+            stroke:
+              new Stroke({
+                color:
+                  "#ffffff",
+                width: 2,
+              }),
+          }),
+      }),
+    ]);
+
+    source.addFeature(
+      visitor
+    );
+
+    if (!selectedPlotId) {
+      return;
+    }
+
+    const target =
+      markers.find(
+        (marker) =>
+          marker.plotId ===
+          selectedPlotId
+      );
+
+    if (!target) {
+      return;
+    }
+
+    const guide =
+      new Feature({
+        geometry:
+          new LineString([
+            visitorCoordinate,
+            fromLonLat([
+              Number(
+                target.longitude
+              ),
+              Number(
+                target.latitude
+              ),
+            ]),
+          ]),
+      });
+
+    guide.setId(
+      "visitor-guide-line"
+    );
+
+    guide.set(
+      "kind",
+      "visitor-guide-line"
+    );
+
+    guide.setStyle(
+      new Style({
+        stroke:
+          new Stroke({
+            color:
+              "rgba(20, 95, 145, .72)",
+            width: 3,
+            lineDash:
+              [7, 6],
+          }),
+      })
+    );
+
+    source.addFeature(
+      guide
+    );
+  }, [
+    visitorPosition,
+    selectedPlotId,
+    markers,
+  ]);
+
   return (
     <div
       className="public-map"
@@ -715,6 +1014,34 @@ export default function PublicSearchPage() {
 
   const [selectedMarker, setSelectedMarker] =
     useState<PublicMapMarker | null>(
+      null
+    );
+
+
+  const [
+    visitorPosition,
+    setVisitorPosition,
+  ] =
+    useState<VisitorPosition | null>(
+      null
+    );
+
+  const [
+    guidanceActive,
+    setGuidanceActive,
+  ] =
+    useState(false);
+
+  const [
+    guidanceError,
+    setGuidanceError,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const guidanceWatchRef =
+    useRef<number | null>(
       null
     );
 
@@ -1055,6 +1382,163 @@ export default function PublicSearchPage() {
     );
   }
 
+
+  function stopGuidance() {
+    if (
+      guidanceWatchRef.current != null &&
+      navigator.geolocation
+    ) {
+      navigator.geolocation.clearWatch(
+        guidanceWatchRef.current
+      );
+    }
+
+    guidanceWatchRef.current =
+      null;
+
+    setGuidanceActive(
+      false
+    );
+
+    setVisitorPosition(
+      null
+    );
+  }
+
+
+  function startGuidance() {
+    if (
+      memorial?.latitude == null ||
+      memorial.longitude == null
+    ) {
+      setGuidanceError(
+        "This memorial does not have a mapped location."
+      );
+      return;
+    }
+
+    if (
+      !navigator.geolocation
+    ) {
+      setGuidanceError(
+        "This browser does not support GPS location."
+      );
+      return;
+    }
+
+    stopGuidance();
+
+    setGuidanceError(
+      null
+    );
+
+    setGuidanceActive(
+      true
+    );
+
+    guidanceWatchRef.current =
+      navigator.geolocation.watchPosition(
+        (position) => {
+          setVisitorPosition({
+            latitude:
+              position.coords.latitude,
+            longitude:
+              position.coords.longitude,
+            accuracy:
+              Number.isFinite(
+                position.coords.accuracy
+              )
+                ? position.coords.accuracy
+                : null,
+          });
+        },
+        (error) => {
+          setGuidanceError(
+            error.message ||
+              "Could not read your current location."
+          );
+          setGuidanceActive(
+            false
+          );
+        },
+        {
+          enableHighAccuracy:
+            true,
+          maximumAge:
+            1000,
+          timeout:
+            15000,
+        }
+      );
+  }
+
+
+  useEffect(() => {
+    return () => {
+      if (
+        guidanceWatchRef.current != null &&
+        navigator.geolocation
+      ) {
+        navigator.geolocation.clearWatch(
+          guidanceWatchRef.current
+        );
+      }
+    };
+  }, []);
+
+
+  const guidanceDistance =
+    useMemo(() => {
+      if (
+        !visitorPosition ||
+        memorial?.latitude == null ||
+        memorial.longitude == null
+      ) {
+        return null;
+      }
+
+      return visitorDistanceMeters(
+        visitorPosition.latitude,
+        visitorPosition.longitude,
+        Number(
+          memorial.latitude
+        ),
+        Number(
+          memorial.longitude
+        )
+      );
+    }, [
+      visitorPosition,
+      memorial,
+    ]);
+
+
+  const guidanceBearing =
+    useMemo(() => {
+      if (
+        !visitorPosition ||
+        memorial?.latitude == null ||
+        memorial.longitude == null
+      ) {
+        return null;
+      }
+
+      return visitorBearing(
+        visitorPosition.latitude,
+        visitorPosition.longitude,
+        Number(
+          memorial.latitude
+        ),
+        Number(
+          memorial.longitude
+        )
+      );
+    }, [
+      visitorPosition,
+      memorial,
+    ]);
+
+
   function directions() {
     if (
       memorial?.latitude == null ||
@@ -1331,15 +1815,103 @@ export default function PublicSearchPage() {
 
                 <div className="public-memorial-actions">
                   {memorial.latitude != null && memorial.longitude != null && (
-                    <button type="button" onClick={directions}>
-                      <LocateFixed size={13} /> Directions
-                    </button>
+                    <>
+                      <button type="button" onClick={directions}>
+                        <ExternalLink size={13} /> Open Directions
+                      </button>
+
+                      <button
+                        type="button"
+                        className={guidanceActive ? "active" : ""}
+                        onClick={
+                          guidanceActive
+                            ? stopGuidance
+                            : startGuidance
+                        }
+                      >
+                        <LocateFixed size={13} />
+                        {guidanceActive
+                          ? "Stop GPS Guide"
+                          : "Guide Me"}
+                      </button>
+                    </>
                   )}
 
                   <button type="button" onClick={() => void copyLink()}>
                     <Copy size={13} /> {copied ? "Copied" : "Share"}
                   </button>
                 </div>
+
+                {(guidanceActive || guidanceError) && (
+                  <div className="public-guidance-v17">
+                    <div className="public-guidance-head-v17">
+                      <LocateFixed size={16} />
+                      <strong>Walking Guide</strong>
+                    </div>
+
+                    {guidanceError && (
+                      <p className="public-guidance-error-v17">
+                        {guidanceError}
+                      </p>
+                    )}
+
+                    {guidanceActive && !visitorPosition && (
+                      <p>
+                        Waiting for a high-accuracy GPS fix…
+                      </p>
+                    )}
+
+                    {guidanceActive &&
+                    visitorPosition &&
+                    guidanceDistance != null && (
+                      <>
+                        <div className="public-guidance-distance-v17">
+                          <strong>
+                            {guidanceDistance < 160
+                              ? `${Math.max(
+                                  1,
+                                  Math.round(
+                                    guidanceDistance *
+                                      3.28084
+                                  )
+                                )} ft`
+                              : `${Math.round(
+                                  guidanceDistance
+                                )} m`}
+                          </strong>
+
+                          <span>
+                            {guidanceBearing != null
+                              ? `${bearingLabel(
+                                  guidanceBearing
+                                )} from your location`
+                              : "from your location"}
+                          </span>
+                        </div>
+
+                        <p>
+                          {guidanceDistance <=
+                          Math.max(
+                            8,
+                            visitorPosition.accuracy ||
+                              0
+                          )
+                            ? "You are very close. Use the visible marker or stone to confirm the final grave location."
+                            : "Walk toward the highlighted memorial marker. Your blue location dot and guide line will update as you move."}
+                        </p>
+
+                        <small>
+                          Phone GPS accuracy: ±
+                          {Math.round(
+                            visitorPosition.accuracy ||
+                            0
+                          )}
+                          m. GPS is a guide, not survey-grade grave positioning.
+                        </small>
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {memorial.allowCorrections && (
                   <div className="public-correction-wrap">
@@ -1501,6 +2073,7 @@ export default function PublicSearchPage() {
               availablePlots={availablePlots}
               mode={mode}
               selectedPlotId={selectedPlotId}
+              visitorPosition={visitorPosition}
               onSelectMarker={selectMapMarker}
             />
 

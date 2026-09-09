@@ -5,10 +5,12 @@ import type {
 import {
   Archive,
   ArrowLeft,
+  ClipboardCheck,
   ClipboardList,
   Gauge,
   Globe2,
   History,
+  LocateFixed,
   Settings,
   Users,
 } from "lucide-react";
@@ -56,6 +58,11 @@ const items = [
     icon: Globe2,
   },
   {
+    to: "/admin/verifications",
+    label: "Field Verifications",
+    icon: ClipboardCheck,
+  },
+  {
     to: "/admin/requests",
     label: "Family Requests",
     icon: ClipboardList,
@@ -88,7 +95,36 @@ export default function AdminShell({
   } = useAuth();
 
   return (
-    <div className="admin-shell-v15">
+    <>
+      <div className="admin-mobile-gate-v17">
+        <div>
+          <LocateFixed size={28} />
+          <h1>Field Verification</h1>
+          <p>
+            Full Administration is intentionally desktop-only. On a phone or small tablet, use the focused Field Verification view instead.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/field")
+            }
+          >
+            Open Field Verification
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() =>
+              navigate("/staff")
+            }
+          >
+            Open Staff Map
+          </button>
+        </div>
+      </div>
+
+      <div className="admin-desktop-frame-v17">
+        <div className="admin-shell-v15">
       <aside className="admin-sidebar-v15">
         <div className="admin-sidebar-brand">
           <div className="admin-sidebar-mark">
@@ -194,6 +230,8 @@ export default function AdminShell({
 
         {children}
       </main>
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
